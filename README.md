@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MATRIX Newsroom Core
 
-## Getting Started
+AI-assisted newsroom dashboard for a Greek WordPress media network of 5 portals
+(**Sportal** · **Matchpoint** · **OnlyAuto** · **Exodos** · **Muse**). Stories are
+ingested from feeds, keyword-routed to the right site, AI-drafted for SEO, moved
+through a 6-stage kanban, and "published" to WordPress.
 
-First, run the development server:
+This iteration is a **fully functional frontend running on mocked data and stubbed
+AI** — no backend, no n8n, no live WordPress/GA4/Claude calls. Every network seam
+is isolated behind a clean service layer so the next iteration is a drop-in.
+
+- **Next.js 16** (App Router) · **TypeScript**
+- **Plain CSS** — design tokens in `globals.css` + CSS Modules per component (no Tailwind, no CSS-in-JS)
+- **zustand** (`persist` → `localStorage`) for cross-page state
+- **recharts** (charts) · **lucide-react** (icons)
+- UI language: **Greek (el-GR)**; code/comments/types in English
+
+## Run
 
 ```bash
-npm run dev
+npm install
+npm run dev      # http://localhost:3000
 # or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build && npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## The backend seam (where the next iteration plugs in)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+All network-bound work goes through `src/lib/services/` and is **stubbed today**.
+Flipping one flag and implementing the route handlers is the entire next step —
+no component or store code changes.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| File | Today (stub) | Next iteration |
+|------|--------------|----------------|
+| `services/router.ts` | **Real** deterministic keyword router — stays valid | unchanged (backend only *augments* it via `rerouteStory`) |
+| `services/agents.ts` | draft/route/trends/gaps/kpi: `USE_BACKEND = false` → sample data | flip to `true`, implement `/api/agents/*` route handlers that proxy n8n/Claude inside `call()` |
+| `services/agents.ts → runSeo()` | **WIRED to the live SEO agent** via `/api/agents/seo` (real-only; error toast if offline) | already real — see *SEO Health Agent* below |
+| `services/wordpress.ts` | `publishToWp()` returns a fake post id | `POST {site.wp}/wp-json/wp/v2/posts` with Yoast/RankMath meta + mapped category (server-side) |
 
-## Learn More
+Search the codebase for **`TODO(backend)`** to find every plug-in point.
+`src/lib/utils/json.ts` (`parseJSON`) is kept unused for parsing real AI responses later.
 
-To learn more about Next.js, take a look at the following resources:
+> **No secrets in the browser.** Unlike the original prototype, nothing here calls
+> `api.anthropic.com` (or any external API) from the client. The real AI/WordPress
+> calls will live in server route handlers.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## SEO Health Agent (live backend)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The **SEO Health** panel, per-portal status lights, and SEO Reports are driven by a
+**real** agent — not a stub. A production n8n workflow ("SEO · Daily Health Report",
+06:00 Athens) crawls the network and writes findings to n8n Data Tables. A second
+workflow, **"SEO Report API"** (`041W7NvD61UES72U`, webhook `/webhook/matrix-seo-report`),
+reads the latest run from those tables and returns a canonical report (per-site
+🟢🟡🔴, network status, top-3 Greek actions, summary items). All numbers are measured
+in n8n; the LLM only phrases.
 
-## Deploy on Vercel
+Flow: `runSEO` (store) → `runSeo()` (`services/agents.ts`) → **`POST /api/agents/seo`**
+(server route) → n8n webhook (secret-guarded) → mapped to the FE shape.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+📖 **Full guide — what it measures, how to run/test, how to improve:** [`docs/SEO-AGENT.md`](docs/SEO-AGENT.md).
+SEO shows **only real generated reports** — no mock. Before a run the panel reads
+"Δεν έχει τρέξει ακόμη"; if n8n is unreachable the user sees an error, never fake data.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Setup: copy `.env.example` → `.env.local` and set `N8N_SEO_WEBHOOK_URL` +
+`N8N_SEO_SECRET` (the secret must match the webhook's `Check Secret` node). The secret
+is **server-only** — the browser calls `/api/agents/seo`, never n8n directly. If the
+backend is unreachable the route returns 502 and `runSeo()` falls back to a visible
+sample, so the dashboard keeps working.
+
+**Network mapping** (real n8n domains are canonical): `sportal→sportal.gr`,
+`matchpoint→matchpoint247.gr`, `onlyauto→onlyauto.gr`, `exodos→exodos.com.gr`.
+**Muse** is not audited → reported 🔴 "WP unreachable" (matches its disconnected state).
+The n8n network also audits `popaganda.gr` + `klik.gr`; they feed the network roll-up
+but are not MATRIX portals — revisit if they should appear.
+
+> ⚠️ **Current blocker:** the n8n cloud account's **trial has ended**, so the webhook
+> returns empty and live runs are paused. Upgrade the n8n plan to activate it; no code
+> change is needed — the dashboard lights up on the next run.
+
+**Deferred (v3 depth):** CrUX field CWV, GSC URL-Inspection/Search-Analytics indexing &
+ranking deltas, IndexNow verification. (`googleApi`/`anthropicApi`/`slackOAuth2Api` creds
+already exist in n8n; GSC depth needs per-property grants + GA4 IDs.)
+
+## Routing assumptions (confirm if the editorial mix changes)
+
+Encoded only in the per-site `kw` arrays in `src/lib/config/sites.ts`:
+
+- `sportal` = general sports (football / basketball / leagues)
+- **`matchpoint` = TENNIS** (client-confirmed; the prototype had it as betting/odds)
+- `onlyauto` = cars · `exodos` = going-out / entertainment · `muse` = lifestyle / beauty
+
+If any change, edit only that site's `kw` (and `vertical`/`wpCat`) — the router and
+the rest of the app are unaffected.
+
+## Structure
+
+```
+src/
+  app/            route pages (thin) + layout (Shell + fonts) + globals.css
+  components/
+    shell/        Shell, Sidebar, Topbar, StoreHydration
+    ui/           Button, Panel, Eyebrow, SiteTag, StatusLight, SlaClock, Stat, Toast
+    dashboard/ board/ drawer/ trends/ gaps/ reports/ agents/
+  lib/
+    types.ts            domain types
+    config/sites.ts     SITES, VERTICALS, COLUMNS (+ routing assumptions)
+    data/               SEED + FEED_POOL (mock data)
+    store/useNewsroom   zustand store: state + all actions
+    services/           router (real) + agents/wordpress (stubbed)
+    utils/              kpi, time (el-GR), json
+```
+
+## Manual verification (no backend running)
+
+1. **Ingest from feeds** (topbar) → a Story Cell is created, keyword-routed to a
+   site with a confidence %, the drawer opens, the board updates. Unmatched content
+   lands in *Ingested* for manual assignment.
+2. **Scope** selector + clicking a dashboard portal filter dashboard / board /
+   trends / gaps consistently.
+3. **Drawer:** edit headline/event; **Re-route with AI** updates site + reason;
+   **Draft with AI** is blocked until a site is set, then fills 3 vertical-flavored
+   titles + meta + keywords (Matchpoint reads tennis, Muse lifestyle); selecting a
+   title updates the headline.
+4. **Publish to {site}** stamps a WP post id, moves the cell to *Published*, shows
+   the `{wp}/wp-json/wp/v2/posts` endpoint + category, and toasts.
+5. **Drag-and-drop** moves cells across the 6 columns; the SLA clock counts down and
+   flips to `SLA MISS`.
+6. **Trends / Gaps / SEO / KPI / Run morning routine** produce scoped output and
+   stamp agent last-run times.
+7. **Agents** toggle on/off and *Run now* works. **Muse shows WordPress
+   disconnected** (red) on the sidebar and its dashboard portal.
+8. State **persists across reload** (localStorage key `newsroom-v2`).
+
+To reset persisted state: clear `localStorage` for the origin (key `newsroom-v2`).

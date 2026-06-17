@@ -1,0 +1,96 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { ChevronRight, Menu, Newspaper, Play } from "lucide-react";
+import { SITES } from "@/lib/config/sites";
+import { useNewsroom } from "@/lib/store/useNewsroom";
+import { USERS, roleLabel } from "@/lib/config/team";
+import { docFor } from "@/lib/config/pageDocs";
+import Button from "@/components/ui/Button";
+import ThemeToggle from "./ThemeToggle";
+import styles from "./Topbar.module.css";
+
+// Global actions belong to the production surfaces only — Dashboard & Newsroom.
+const ACTION_ROUTES = new Set(["/", "/newsroom"]);
+
+export default function Topbar({ onMenu }: { onMenu: () => void }) {
+  const pathname = usePathname();
+  const scope = useNewsroom((s) => s.scope);
+  const setScope = useNewsroom((s) => s.setScope);
+  const morning = useNewsroom((s) => s.morning);
+  const pullInbox = useNewsroom((s) => s.pullInbox);
+  const currentUser = useNewsroom((s) => s.currentUser);
+  const setCurrentUser = useNewsroom((s) => s.setCurrentUser);
+
+  const doc = docFor(pathname);
+  const showActions = ACTION_ROUTES.has(pathname);
+
+  // Stay on the current page — these refresh data in the background, no navigation.
+  const onPullAmna = () => void pullInbox();
+  const onMorning = () => void morning();
+
+  return (
+    <header className={styles.topbar}>
+      <button
+        className={styles.menuBtn}
+        onClick={onMenu}
+        aria-label="Άνοιγμα μενού"
+      >
+        <Menu size={20} />
+      </button>
+
+      {/* page-aware title + one-line tagline → every tab reads differently */}
+      <div className={styles.titleWrap}>
+        <span className={styles.title}>{doc.title}</span>
+        {doc.tagline && <div className={styles.tagline}>{doc.tagline}</div>}
+      </div>
+
+      <div className={styles.selectWrap}>
+        <select
+          className={styles.select}
+          value={scope}
+          onChange={(e) => setScope(e.target.value)}
+        >
+          <option value="all">Όλο το δίκτυο</option>
+          {SITES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <ChevronRight size={14} color="var(--dim)" className={styles.chevron} />
+      </div>
+
+      {/* dev current-user switcher — replaced by real auth next iteration */}
+      <div className={styles.selectWrap} title="Προβολή ως (dev)">
+        <select
+          className={styles.select}
+          value={currentUser}
+          onChange={(e) => setCurrentUser(e.target.value)}
+        >
+          {USERS.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name} · {roleLabel[u.role]}
+            </option>
+          ))}
+        </select>
+        <ChevronRight size={14} color="var(--dim)" className={styles.chevron} />
+      </div>
+
+      {showActions && (
+        <div className={styles.actions}>
+          <Button variant="soft" icon={Newspaper} onClick={onPullAmna} small>
+            Λήψη ΑΠΕ-ΜΠΕ
+          </Button>
+          <Button icon={Play} onClick={onMorning}>
+            Ενημέρωση δικτύου
+          </Button>
+        </div>
+      )}
+
+      {/* Always the last child → fixed in the top-right corner on every page,
+          whether or not the action buttons are present. */}
+      <ThemeToggle />
+    </header>
+  );
+}

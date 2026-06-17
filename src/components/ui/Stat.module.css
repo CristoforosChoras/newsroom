@@ -1,0 +1,24 @@
+.stat {
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.value {
+  font-size: 27px;
+  font-weight: 800;
+  margin-top: 7px;
+  letter-spacing: -0.5px;
+}
+
+.sub {
+  font-size: 12px;
+  margin-top: 3px;
+}

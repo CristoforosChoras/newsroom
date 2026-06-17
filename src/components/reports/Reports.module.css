@@ -1,0 +1,333 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.checksPanel {
+  margin-bottom: 16px;
+}
+
+.checksIntro {
+  font-size: 12.5px;
+  color: var(--dim);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.checksIntro code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--orange);
+}
+
+.checksGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 679px) {
+  .checksGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.checkGroupTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12.5px;
+}
+
+.sevTag {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 1px 5px;
+  margin-top: 1px;
+  min-width: 62px;
+  text-align: center;
+}
+
+.checkLabel {
+  color: var(--dim);
+  line-height: 1.4;
+}
+
+.emptyPanel {
+  text-align: center;
+  padding: 50px;
+}
+
+.emptyIcon {
+  margin: 0 auto 12px;
+  display: block;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.emptySub {
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 11px;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.network {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.date {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.bodyRow {
+  display: flex;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--dim);
+  padding: 4px 0;
+  line-height: 1.5;
+}
+
+.volume {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--faint);
+  margin-bottom: 10px;
+}
+
+.issueRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.issueLabel {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+}
+
+.issueCount {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.block {
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.subhead {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+
+.offender {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--orange);
+  padding: 3px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bodyIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── tabs + date search ── */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabActive {
+  background: var(--orange);
+  color: #0a0a0b;
+  border-color: var(--orange);
+}
+
+.tabCount {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 5px;
+  padding: 0 5px;
+}
+
+.tab:not(.tabActive) .tabCount {
+  background: var(--panel);
+}
+
+.dateWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.dateIcon {
+  position: absolute;
+  left: 9px;
+  pointer-events: none;
+}
+
+.dateInput {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px 7px 30px;
+  font-size: 12.5px;
+  font-family: var(--font-sans);
+  color: inherit;
+}
+
+.dateClear {
+  margin-left: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ── KPI report table ── */
+.kpiTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+  font-size: 12.5px;
+}
+
+.kpiTable th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.kpiTable td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.kpiTable tfoot td {
+  font-weight: 700;
+  border-bottom: none;
+  border-top: 2px solid var(--line);
+}
+
+.kpiTable .num {
+  text-align: right;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 0;
+  font-size: 12.5px;
+}
+
+.topRank {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+  width: 14px;
+}
+
+.topTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+}
+
+.topViews {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--orange);
+}

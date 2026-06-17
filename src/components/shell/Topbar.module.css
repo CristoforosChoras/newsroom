@@ -1,0 +1,108 @@
+.topbar {
+  height: 62px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  gap: 14px;
+  flex-shrink: 0;
+  background: var(--panel);
+  position: relative;
+}
+
+.titleWrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.tagline {
+  font-size: 11.5px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 52ch;
+}
+
+.selectWrap {
+  position: relative;
+}
+
+.select {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 28px 7px 11px;
+  font-size: 12.5px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chevron {
+  position: absolute;
+  right: 9px;
+  top: 9px;
+  transform: rotate(90deg);
+  pointer-events: none;
+}
+
+.actions {
+  display: flex;
+  gap: 9px;
+}
+
+.menuBtn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* tablet/mobile: let the bar wrap instead of overflowing */
+@media (max-width: 1023px) {
+  .topbar {
+    height: auto;
+    min-height: 62px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 679px) {
+  .menuBtn {
+    display: grid;
+  }
+  .tagline {
+    display: none;
+  }
+  /* scope selector gets its own full-width row */
+  .selectWrap {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .select {
+    width: 100%;
+  }
+  /* shrink action buttons to icons where space is tight */
+  .actions button {
+    font-size: 0;
+    gap: 0;
+    padding: 10px;
+  }
+}

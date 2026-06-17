@@ -1,0 +1,28 @@
+.tag {
+  font-family: var(--font-mono);
+  letter-spacing: 0.3px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.none {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber);
+  border: 1px solid rgba(216, 160, 25, 0.33);
+  border-radius: 5px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}

@@ -1,0 +1,92 @@
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+
+.toolbar {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.scopeLabel {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--faint);
+  font-family: var(--font-mono);
+}
+
+/* the single scroll region for the board — vertical (cards) + horizontal
+   (columns) live here; the page itself does not scroll on /newsroom. */
+.columns {
+  display: flex;
+  gap: 12px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 6px;
+}
+
+.column {
+  width: 236px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.colHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+
+/* mobile: one column at a time with snap + sticky headers */
+@media (max-width: 679px) {
+  .columns {
+    scroll-snap-type: x mandatory;
+  }
+  .column {
+    width: 80vw;
+    scroll-snap-align: start;
+  }
+  .colHead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg);
+    padding: 4px 2px;
+    margin-bottom: 8px;
+  }
+}
+
+.colLabel {
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.colCount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.colBody {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 80px;
+}
+
+.emptyCol {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 12px;
+  color: var(--faint);
+  text-align: center;
+}
