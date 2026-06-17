@@ -24,7 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="el" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="el"
+      // the inline script below sets data-theme before hydration → expected mismatch
+      suppressHydrationWarning
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         {/* set the saved theme before paint (no flash of the wrong theme) */}
         <script
