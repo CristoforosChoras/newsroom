@@ -1,7 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CheckCircle2, Newspaper, Plus, Shuffle, User } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Newspaper,
+  Plus,
+  Shuffle,
+  User,
+} from "lucide-react";
 import { COLUMNS, siteById } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
 import Button from "@/components/ui/Button";
@@ -17,7 +25,17 @@ export default function Board() {
   const openCell = useNewsroom((s) => s.openCell);
   const currentUser = useNewsroom((s) => s.currentUser);
   const dragId = useRef<string | null>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const [mine, setMine] = useState(false);
+
+  // slide one stage at a time (snap handles the rest); swipe/trackpad still work
+  const slide = (dir: -1 | 1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const col = el.querySelector(`.${styles.column}`) as HTMLElement | null;
+    const step = col ? col.offsetWidth + 12 : el.clientWidth * 0.85;
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
+  };
 
   const scoped =
     scope === "all" ? cellsAll : cellsAll.filter((c) => c.site === scope);
@@ -53,9 +71,25 @@ export default function Board() {
           {scope === "all" ? "όλα τα sites" : siteById(scope)?.name} · drag
           μεταξύ σταδίων
         </div>
+        <div className={styles.slideNav}>
+          <button
+            className={styles.slideBtn}
+            onClick={() => slide(-1)}
+            aria-label="Προηγούμενα στάδια"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            className={styles.slideBtn}
+            onClick={() => slide(1)}
+            aria-label="Επόμενα στάδια"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
-      <div className={styles.columns}>
+      <div className={styles.columns} ref={scrollerRef}>
         {COLUMNS.map((col) => {
           const list = cells.filter((c) => c.status === col.id);
           return (

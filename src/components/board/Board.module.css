@@ -8,6 +8,7 @@
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
   align-items: center;
 }
@@ -19,49 +20,74 @@
   font-family: var(--font-mono);
 }
 
-/* the single scroll region for the board — vertical (cards) + horizontal
-   (columns) live here; the page itself does not scroll on /newsroom. */
+/* ◀ ▶ slider controls — glide one stage at a time */
+.slideNav {
+  display: flex;
+  gap: 6px;
+}
+
+.slideBtn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.slideBtn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Horizontal slider of stages: columns snap into place; the horizontal
+   scrollbar is hidden (the arrows + swipe replace it). Vertical card scroll
+   is the single visible scrollbar. */
 .columns {
   display: flex;
   gap: 12px;
-  overflow: auto;
   flex: 1;
   min-height: 0;
-  padding-bottom: 6px;
+  overflow-x: auto;
+  overflow-y: auto;
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  scroll-padding-left: 2px;
+  padding-bottom: 2px;
+}
+
+/* hide the horizontal bar (slider arrows handle left/right) — keep the vertical */
+.columns::-webkit-scrollbar:horizontal {
+  height: 0;
 }
 
 .column {
-  width: 236px;
-  flex-shrink: 0;
+  flex: 0 0 300px;
+  min-width: 0;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
 }
 
+@media (max-width: 679px) {
+  .column {
+    flex-basis: 85vw;
+  }
+}
+
+/* stage header stays pinned at the top of the scroll area */
 .colHead {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin-bottom: 10px;
-  padding: 0 2px;
-}
-
-/* mobile: one column at a time with snap + sticky headers */
-@media (max-width: 679px) {
-  .columns {
-    scroll-snap-type: x mandatory;
-  }
-  .column {
-    width: 80vw;
-    scroll-snap-align: start;
-  }
-  .colHead {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--bg);
-    padding: 4px 2px;
-    margin-bottom: 8px;
-  }
+  padding: 4px 2px 8px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg);
 }
 
 .colLabel {
@@ -79,7 +105,7 @@
   display: flex;
   flex-direction: column;
   gap: 9px;
-  min-height: 80px;
+  min-height: 60px;
 }
 
 .emptyCol {
