@@ -6,15 +6,16 @@ import { Lightbulb, Plus, PowerOff, X } from "lucide-react";
 import type { Gap } from "@/lib/types";
 import { siteById } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { T } from "@/lib/config/strings";
 import Panel from "@/components/ui/Panel";
 import Button from "@/components/ui/Button";
 import SiteTag from "@/components/ui/SiteTag";
 import styles from "./Gaps.module.css";
 
 const TYPE: Record<Gap["type"], { color: string; label: string }> = {
-  article: { color: "var(--blue)", label: "Άρθρο" },
-  video: { color: "var(--red)", label: "Βίντεο" },
-  post: { color: "var(--green)", label: "Post" },
+  article: { color: "var(--blue)", label: T.gaps.type.article },
+  video: { color: "var(--red)", label: T.gaps.type.video },
+  post: { color: "var(--green)", label: T.gaps.type.post },
 };
 
 export default function Gaps() {
@@ -29,9 +30,9 @@ export default function Gaps() {
   const [loading, setLoading] = useState(false);
 
   const IDEA_TYPE: Record<string, string> = {
-    trend: "Trend",
-    gap: "Gap",
-    both: "Trend + Gap",
+    trend: T.gaps.ideaType.trend,
+    gap: T.gaps.ideaType.gap,
+    both: T.gaps.ideaType.both,
   };
 
   const list = scope === "all" ? gaps : gaps.filter((g) => g.site === scope);
@@ -40,9 +41,9 @@ export default function Gaps() {
     <div>
       <div className={styles.header}>
         <div className={styles.intro}>
-          Τι περιεχόμενο λείπει και έχει ζήτηση{" "}
-          {scope !== "all" && `για ${siteById(scope)?.name}`} — ευκαιρίες με
-          demand signal.
+          {T.gaps.intro1}{" "}
+          {scope !== "all" && T.gaps.introForSite(siteById(scope)?.name ?? "")}
+          {T.gaps.intro2}
         </div>
         <Button
           icon={Lightbulb}
@@ -55,20 +56,20 @@ export default function Gaps() {
           }}
           style={{ marginLeft: "auto" }}
         >
-          Find content gaps
+          {T.gaps.find}
         </Button>
       </div>
 
       {!active && (
         <Panel className={styles.deactivated}>
           <PowerOff size={26} color="var(--faint)" className={styles.deactIcon} />
-          <div className={styles.deactTitle}>Το Content Gaps είναι ανενεργό</div>
+          <div className={styles.deactTitle}>{T.gaps.deactivated}</div>
           <div className={styles.deactSub}>
-            Ενεργοποίησέ το από τη σελίδα{" "}
+            {T.deactivatedPanel.prefix}{" "}
             <Link href="/agents" className={styles.deactLink}>
-              Agents
+              {T.deactivatedPanel.link}
             </Link>{" "}
-            για να ξανατρέξει.
+            {T.deactivatedPanel.suffix}
           </div>
         </Panel>
       )}
@@ -98,7 +99,7 @@ export default function Gaps() {
                     )}
                     <SiteTag id={g.site} small />
                     {g.crossMedia && (
-                      <span className={styles.kindTag}>cross-media</span>
+                      <span className={styles.kindTag}>{T.gaps.crossMedia}</span>
                     )}
                   </div>
                   <div className={styles.idea}>{g.idea}</div>
@@ -110,7 +111,7 @@ export default function Gaps() {
                       icon={Plus}
                       onClick={() => createCell(g)}
                     >
-                      Create cell
+                      {T.common.createCell}
                     </Button>
                     <Button
                       small
@@ -118,27 +119,25 @@ export default function Gaps() {
                       icon={X}
                       onClick={() => void dismiss(g.id)}
                     >
-                      Απόρριψη
+                      {T.gaps.dismiss}
                     </Button>
                     {typeof g.winnability === "number" && (
                       <span className={styles.win}>
-                        winnability {Math.round(g.winnability * 100)}%
+                        {T.gaps.winnability(Math.round(g.winnability * 100))}
                       </span>
                     )}
                   </div>
                 </div>
                 <div className={styles.demand}>
                   <div className={styles.demandNum}>{g.demand}</div>
-                  <div className={styles.demandLabel}>demand</div>
+                  <div className={styles.demandLabel}>{T.gaps.demand}</div>
                 </div>
               </div>
             </Panel>
           );
         })}
         {list.length === 0 && (
-          <Panel className={styles.empty}>
-            Καμία ευκαιρία για αυτό το site. Πάτησε «Find content gaps».
-          </Panel>
+          <Panel className={styles.empty}>{T.gaps.empty}</Panel>
         )}
       </div>
       )}

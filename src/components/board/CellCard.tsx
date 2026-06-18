@@ -4,6 +4,7 @@ import { Globe, RefreshCw } from "lucide-react";
 import type { Cell } from "@/lib/types";
 import { evaluateGate } from "@/lib/services/seoGate";
 import { userById, initials } from "@/lib/config/team";
+import { T } from "@/lib/config/strings";
 import SiteTag from "@/components/ui/SiteTag";
 import SlaClock from "@/components/ui/SlaClock";
 import StatusLight from "@/components/ui/StatusLight";
@@ -30,7 +31,7 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
       <div className={styles.head}>
         <SiteTag id={c.site} small />
         {c.urgency === "breaking" && (
-          <span className={styles.breaking}>BREAKING</span>
+          <span className={styles.breaking}>{T.card.breaking}</span>
         )}
         {busy && (
           <RefreshCw
@@ -50,7 +51,7 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
           {c.assignee && (
             <span
               className={styles.avatar}
-              title={`Συντάκτης: ${userById(c.assignee)?.name ?? c.assignee}`}
+              title={T.card.author(userById(c.assignee)?.name ?? c.assignee)}
             >
               {initials(userById(c.assignee)?.name ?? "?")}
             </span>
@@ -58,14 +59,14 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
           {c.reviewer && (
             <span
               className={styles.avatarEd}
-              title={`Επιμελητής: ${userById(c.reviewer)?.name ?? c.reviewer}`}
+              title={T.card.editor(userById(c.reviewer)?.name ?? c.reviewer)}
             >
               {initials(userById(c.reviewer)?.name ?? "?")}
             </span>
           )}
           {c.aiVersion > 0 && <span className={styles.vbadge}>v{c.aiVersion}</span>}
           {c.returnedFromReview && (
-            <span className={styles.returned}>↩ με σχόλια</span>
+            <span className={styles.returned}>{T.card.returnedWithNotes}</span>
           )}
         </div>
       )}
@@ -78,11 +79,11 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
         <Globe size={11} />
         {c.source}
         {c.wpPostId ? (
-          <span className={styles.wp}>WP #{c.wpPostId}</span>
+          <span className={styles.wp}>{T.card.wp(c.wpPostId)}</span>
         ) : gate ? (
           <span
             className={styles.seoDot}
-            title={`SEO: ${gate.status}${gate.blockers.length ? ` · ${gate.blockers.length} ζητήματα` : ""}`}
+            title={T.card.seoTitle(gate.status, gate.blockers.length)}
           >
             <StatusLight s={gate.status} />
           </span>

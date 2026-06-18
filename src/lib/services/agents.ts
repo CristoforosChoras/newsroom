@@ -15,27 +15,13 @@ import { VERTICALS, siteById } from "@/lib/config/sites";
 import { routeContent } from "@/lib/services/router";
 
 /**
- * AI SERVICE SEAM — the whole point of this iteration.
+ * AI SERVICE SEAM.
  *
- * Today every function returns deterministic/sample data after a short delay so
- * the frontend is fully functional offline. Next iteration: flip USE_BACKEND to
- * true and implement the `/api/agents/*` route handlers (which proxy n8n/Claude)
- * inside `call()`. No component or store code needs to change.
+ * Each function calls its `/api/agents/*` proxy (which forwards to n8n/Claude).
+ * Where a deterministic local equivalent exists (routing) we fall back to it on
+ * failure so the UI keeps working offline; otherwise we return null and the store
+ * surfaces an offline notice (no mock data).
  */
-const USE_BACKEND = false;
-
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-async function call<T>(stub: () => T): Promise<T> {
-  if (!USE_BACKEND) {
-    await delay(450);
-    return stub();
-  }
-  // TODO(backend): POST to /api/agents/* which proxies n8n/Claude, parse the
-  // JSON response (use lib/utils/json.ts → parseJSON for tolerant parsing) and
-  // return it shaped like the stubs below.
-  throw new Error("backend not wired");
-}
 
 /* ───────────────────────── reroute ───────────────────────── */
 
@@ -45,6 +31,7 @@ export interface RouteResult {
   reason: string;
 }
 
+// Deterministic keyword router — also the offline fallback for the AI re-route.
 function sampleRoute(cell: Cell): RouteResult {
   const r = routeContent(`${cell.headline} ${cell.event}`);
   if (r.site) {
@@ -63,8 +50,69 @@ function sampleRoute(cell: Cell): RouteResult {
   };
 }
 
-export const rerouteStory = (cell: Cell): Promise<RouteResult> =>
-  call(() => sampleRoute(cell));
+// AI re-route via n8n + Claude (/api/agents/route). Falls back to the
+// deterministic router on any failure so the button always returns a result.
+export async function rerouteStory(cell: Cell): Promise<RouteResult> {
+  try {
+    const res = await fetch("/api/agents/route", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        headline: cell.headline,
+        event: cell.event,
+        sourceText: cell.sourceText,
+      }),
+    });
+    if (!res.ok) throw new Error(`route ${res.status}`);
+    const data = (await res.json()) as RouteResult;
+    if (typeof data.confidence !== "number") throw new Error("bad route payload");
+    return data;
+  } catch {
+    return sampleRoute(cell);
+  }
+}
+
+/* ───────────────────────── AI draft ───────────────────────── */
+
+// Shape produced by the n8n "Story Draft API" (Claude). Targets the publish-gate
+// fields in lib/config/seoCritical.ts: seoTitle === headline (the headline_match
+// critical check), meta present (120–160 advisory), body ≥150 words. The featured
+// image stays the editor's job — the gate's only remaining critical blocker.
+export interface DraftResult {
+  headline?: string;
+  titles: string[];
+  seoTitle: string;
+  meta: string;
+  excerpt: string;
+  keywords: string[];
+  body: string; // HTML
+}
+
+// Generate an SEO draft for a cell via n8n + Claude (/api/agents/draft).
+// Returns null on failure (store surfaces an offline notice — no mock).
+export async function generateDraft(cell: Cell): Promise<DraftResult | null> {
+  try {
+    const res = await fetch("/api/agents/draft", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        headline: cell.headline,
+        event: cell.event,
+        source: cell.source,
+        sourceText: cell.sourceText,
+        site: cell.site,
+      }),
+    });
+    if (!res.ok) throw new Error(`draft ${res.status}`);
+    const data = (await res.json()) as DraftResult;
+    if (!Array.isArray(data.titles) || typeof data.body !== "string") {
+      throw new Error("bad draft payload");
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
 
 /* ──────────────────── Social Radar (trends + gaps) ──────────────────── */
 
@@ -246,5 +294,52 @@ export async function runSeoRetro(): Promise<SeoRetroResult | null> {
     return data;
   } catch {
     return null;
+  }
+}
+
+/* ──────────────────── AMNA ingestion control ──────────────────── */
+
+// Cadence for the AMNA wire crawl, in minutes. 0 = manual-only. Stored in n8n
+// (trend_config) and read/written via /api/agents/amna-config.
+export interface AmnaConfig {
+  intervalMin: number;
+  lastRunMs: number;
+}
+
+export async function getAmnaConfig(): Promise<AmnaConfig | null> {
+  try {
+    const res = await fetch("/api/agents/amna-config", { cache: "no-store" });
+    if (!res.ok) throw new Error(`amna-config ${res.status}`);
+    return (await res.json()) as AmnaConfig;
+  } catch {
+    return null;
+  }
+}
+
+// Persist the cadence. Pass null/0 for manual-only. Returns the stored config.
+export async function setAmnaInterval(
+  intervalMin: number | null,
+): Promise<AmnaConfig | null> {
+  try {
+    const res = await fetch("/api/agents/amna-config", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intervalMin }),
+    });
+    if (!res.ok) throw new Error(`amna-config ${res.status}`);
+    return (await res.json()) as AmnaConfig;
+  } catch {
+    return null;
+  }
+}
+
+// Manually kick a wire crawl now. Resolves true once n8n has accepted the run
+// (the crawl then completes server-side over the next few minutes).
+export async function runAmnaIngest(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/agents/amna-run", { method: "POST" });
+    return res.ok;
+  } catch {
+    return false;
   }
 }

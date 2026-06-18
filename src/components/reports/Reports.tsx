@@ -19,6 +19,7 @@ import {
   SEVERITY_COLOR,
   SEVERITY_LABEL,
 } from "@/lib/config/seoChecksDoc";
+import { T } from "@/lib/config/strings";
 import Panel from "@/components/ui/Panel";
 import Button from "@/components/ui/Button";
 import SiteTag from "@/components/ui/SiteTag";
@@ -64,7 +65,7 @@ function KpiReport({ r, scope }: { r: Report; scope: string }) {
   ) as [string, SiteKpi][];
   if (scope !== "all") rows = rows.filter(([id]) => id === scope);
   if (rows.length === 0) {
-    return <div className={styles.bodyRow}>Δεν υπάρχουν δεδομένα γι&apos; αυτό το site.</div>;
+    return <div className={styles.bodyRow}>{T.reports.noSiteData}</div>;
   }
   const totalViews = rows.reduce((n, [, v]) => n + v.views, 0);
   const totalArticles = rows.reduce((n, [, v]) => n + v.articles, 0);
@@ -77,10 +78,10 @@ function KpiReport({ r, scope }: { r: Report; scope: string }) {
       <table className={styles.kpiTable}>
         <thead>
           <tr>
-            <th>Portal</th>
-            <th className={styles.num}>Σήμερα</th>
-            <th className={styles.num}>vs χθες</th>
-            <th className={styles.num}>Άρθρα</th>
+            <th>{T.reports.colPortal}</th>
+            <th className={styles.num}>{T.reports.colToday}</th>
+            <th className={styles.num}>{T.reports.colVsYesterday}</th>
+            <th className={styles.num}>{T.reports.colArticles}</th>
           </tr>
         </thead>
         <tbody>
@@ -100,7 +101,7 @@ function KpiReport({ r, scope }: { r: Report; scope: string }) {
         {showFooter && (
           <tfoot>
             <tr>
-              <td>Δίκτυο</td>
+              <td>{T.reports.networkRow}</td>
               <td className={styles.num}>{fmtViews(totalViews)}</td>
               <td className={styles.num}>
                 {r.kpi.network.delta != null ? (
@@ -117,7 +118,7 @@ function KpiReport({ r, scope }: { r: Report; scope: string }) {
 
       {top.length > 0 && (
         <div className={styles.block}>
-          <div className={styles.subhead}>Top άρθρα</div>
+          <div className={styles.subhead}>{T.reports.topArticles}</div>
           {top.slice(0, 5).map((a, i) => (
             <div key={i} className={styles.topRow}>
               <span className={styles.topRank}>{i + 1}</span>
@@ -166,7 +167,8 @@ export default function Reports() {
             .join(" ")}
           onClick={() => setTab("seo")}
         >
-          <Gauge size={14} /> SEO <span className={styles.tabCount}>{seoCount}</span>
+          <Gauge size={14} /> {T.reports.tabSeo}{" "}
+          <span className={styles.tabCount}>{seoCount}</span>
         </button>
         <button
           className={[styles.tab, tab === "kpi" ? styles.tabActive : ""]
@@ -174,7 +176,7 @@ export default function Reports() {
             .join(" ")}
           onClick={() => setTab("kpi")}
         >
-          <Activity size={14} /> KPI{" "}
+          <Activity size={14} /> {T.reports.tabKpi}{" "}
           <span className={styles.tabCount}>{kpiCount}</span>
         </button>
 
@@ -198,19 +200,19 @@ export default function Reports() {
         {tab === "seo" ? (
           <>
             <Button icon={History} variant="ghost" onClick={runSeoRetro}>
-              Χθεσινή αναφορά SEO
+              {T.reports.seoRetroBtn}
             </Button>
             <Button
               icon={HelpCircle}
               variant={showChecks ? "soft" : "ghost"}
               onClick={() => setShowChecks((v) => !v)}
             >
-              Τι ελέγχει
+              {T.reports.whatChecks}
             </Button>
           </>
         ) : (
           <Button icon={Activity} variant="ghost" onClick={runKPI}>
-            Ανανέωση KPI
+            {T.reports.refreshKpi}
           </Button>
         )}
         {list.length > 0 && (
@@ -220,7 +222,7 @@ export default function Reports() {
             onClick={clearReports}
             style={{ marginLeft: "auto" }}
           >
-            Καθαρισμός
+            {T.reports.clear}
           </Button>
         )}
       </div>
@@ -228,10 +230,8 @@ export default function Reports() {
       {tab === "seo" && showChecks && (
         <Panel className={styles.checksPanel}>
           <div className={styles.checksIntro}>
-            Τι ελέγχει η <strong>Χθεσινή Αναφορά SEO</strong> σε κάθε άρθρο
-            (ντετερμινιστικά· το LLM μόνο διατυπώνει, δεν εφευρίσκει μετρήσεις).
-            Πλήρης τεκμηρίωση:
-            <code> docs/SEO-AGENT.md</code>.
+            {T.reports.checksIntro1}
+            <code>{T.reports.checksDocPath}</code>.
           </div>
           <div className={styles.checksGrid}>
             {SEO_CHECKS_DOC.map((g) => (
@@ -262,15 +262,13 @@ export default function Reports() {
           <FileText size={28} color="var(--faint)" className={styles.emptyIcon} />
           <div className={styles.emptyTitle}>
             {day
-              ? "Καμία αναφορά γι' αυτή την ημερομηνία"
+              ? T.reports.noReportsForDate
               : tab === "seo"
-                ? "Καμία αναφορά SEO ακόμη"
-                : "Καμία αναφορά KPI ακόμη"}
+                ? T.reports.noSeoReports
+                : T.reports.noKpiReports}
           </div>
           <div className={styles.emptySub}>
-            {tab === "seo"
-              ? "Πάτησε «Χθεσινή αναφορά SEO»."
-              : "Πάτησε «Ανανέωση KPI»."}
+            {tab === "seo" ? T.reports.pressSeo : T.reports.pressKpi}
           </div>
         </Panel>
       )}
@@ -281,16 +279,19 @@ export default function Reports() {
             <Panel key={r.id}>
               <div className={styles.head}>
                 <History size={16} color="var(--orange)" />
-                <span className={styles.title}>Χθεσινή Αναφορά SEO</span>
+                <span className={styles.title}>{T.reports.seoRetroTitle}</span>
                 <SiteTag id={r.site === "all" ? null : r.site} small />
                 <StatusLight s={r.status} />
                 <span className={styles.date}>{dateTimeShort(r.date)}</span>
               </div>
               {r.volume && (
                 <div className={styles.volume}>
-                  {r.volume.audited}/{r.volume.published} άρθρα ελέγχθηκαν
+                  {T.reports.auditedVolume(
+                    r.volume.audited,
+                    r.volume.published,
+                  )}
                   {r.volume.skippedPartner
-                    ? ` · ${r.volume.skippedPartner} partner εκτός`
+                    ? T.reports.partnerSkipped(r.volume.skippedPartner)
                     : ""}
                 </div>
               )}
@@ -305,7 +306,7 @@ export default function Reports() {
               ))}
               {r.offenders && r.offenders.length > 0 && (
                 <div className={styles.block}>
-                  <div className={styles.subhead}>Χειρότερα άρθρα</div>
+                  <div className={styles.subhead}>{T.reports.worstArticles}</div>
                   {r.offenders.slice(0, 5).map((o, i) => (
                     <a
                       key={i}
@@ -321,7 +322,7 @@ export default function Reports() {
               )}
               {r.lessons && r.lessons.length > 0 && (
                 <div className={styles.block}>
-                  <div className={styles.subhead}>Σήμερα</div>
+                  <div className={styles.subhead}>{T.reports.today}</div>
                   {r.lessons.map((l, i) => (
                     <div key={i} className={styles.bodyRow}>
                       <ArrowRight
@@ -344,11 +345,13 @@ export default function Reports() {
                   <Activity size={16} color="var(--orange)" />
                 )}
                 <span className={styles.title}>
-                  {r.type === "seo" ? "SEO Health Report" : "KPI Report"}
+                  {r.type === "seo"
+                    ? T.reports.seoHealthTitle
+                    : T.reports.kpiTitle}
                 </span>
                 {r.type === "kpi" ? (
                   scope === "all" ? (
-                    <span className={styles.network}>δίκτυο</span>
+                    <span className={styles.network}>{T.reports.network}</span>
                   ) : (
                     <SiteTag id={scope} small />
                   )

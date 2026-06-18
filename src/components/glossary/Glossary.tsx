@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { BookOpen, Search } from "lucide-react";
 import { GLOSSARY } from "@/lib/config/glossary";
+import { T } from "@/lib/config/strings";
 import Panel from "@/components/ui/Panel";
 import styles from "./Glossary.module.css";
 
@@ -37,14 +38,13 @@ export default function Glossary() {
     <div>
       <div className={styles.header}>
         <div className={styles.intro}>
-          Γλωσσάρι όρων &amp; συντομογραφιών του MATRIX — {total} όροι σε{" "}
-          {GLOSSARY.length} κατηγορίες.
+          {T.glossary.intro(total, GLOSSARY.length)}
         </div>
         <div className={styles.searchWrap}>
           <Search size={15} className={styles.searchIcon} />
           <input
             className={styles.search}
-            placeholder="Αναζήτηση όρου…"
+            placeholder={T.glossary.searchPlaceholder}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -75,9 +75,7 @@ export default function Glossary() {
         ))}
 
         {groups.length === 0 && (
-          <Panel className={styles.empty}>
-            Κανένας όρος για «{q}».
-          </Panel>
+          <Panel className={styles.empty}>{T.glossary.empty(q)}</Panel>
         )}
       </div>
     </div>

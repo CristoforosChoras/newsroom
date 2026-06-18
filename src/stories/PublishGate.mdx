@@ -1,0 +1,46 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Publish Gate" />
+
+# The publish gate
+
+A shared, single-source checklist that decides whether a cell may be published.
+It is the contract between the **gate** (which enforces, in the drawer and on
+`approveAndPublish`) and the **SEO retrospective** (which teaches, after the fact).
+
+- Checks: `src/lib/config/seoCritical.ts` → `GATE_CHECKS` (each has `id`, Greek
+  `label`, `severity`, and a `test(cell)` returning `true` = pass).
+- Logic: `src/lib/services/seoGate.ts` → `evaluateGate`, `canPublish`,
+  `criticalBlockers`.
+
+## Severities
+
+- **`critical`** → **blocks** publishing. Status goes **red** if any fail.
+- **`improve`** → advisory only, **never blocks** (status **amber** if only these
+  fail, **green** when all pass).
+
+## Critical checks (must pass to publish)
+
+| id | meaning |
+|----|---------|
+| `headline` | headline is present |
+| `headline_match` | SEO title equals the headline (or is empty) |
+| `featured_image` | a featured image is set |
+| `meta_present` | a meta description exists |
+
+> Note: `headline_match` passes when `seoTitle` is empty **or** equals the
+> headline. The AI draft therefore sets `seoTitle === headline` on purpose; a
+> divergent SEO title would otherwise block publishing.
+
+## Improve checks (advisory)
+
+`meta_len` (120–160 chars), `seo_title_len` (≤60), `excerpt` present,
+`body_len` (≥150 words), `tags` present.
+
+## How it surfaces
+
+- **CellCard** shows a small SEO status dot from `evaluateGate`.
+- **CellDrawer** lists the current blockers and disables the publish action until
+  `canPublish(cell)` is true; a lead can record an override with a reason.
+- A freshly AI-drafted cell typically passes everything **except the featured
+  image** — which is intentionally the editor's job and the last critical blocker.

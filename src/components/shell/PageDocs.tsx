@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { HelpCircle, ChevronDown } from "lucide-react";
 import { docFor } from "@/lib/config/pageDocs";
+import { T } from "@/lib/config/strings";
 import styles from "./PageDocs.module.css";
 
 // Consistent in-page documentation toggle on EVERY page — same pattern as the
@@ -29,7 +30,7 @@ export default function PageDocs() {
         onClick={() => setOpenPath(open ? null : pathname)}
       >
         <HelpCircle size={14} />
-        Πώς δουλεύει & γιατί
+        {T.shell.pageDocsToggle}
         <ChevronDown
           size={14}
           className={[styles.chev, open ? styles.chevOpen : ""]

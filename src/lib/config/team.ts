@@ -27,9 +27,6 @@ const worksOn = (u: User, site: string | null): boolean =>
 export const userById = (id: string | null | undefined): User | undefined =>
   USERS.find((u) => u.id === id);
 
-export const usersByRole = (role: Role): User[] =>
-  USERS.filter((u) => u.role === role);
-
 export const writersForSite = (site: string | null): User[] =>
   USERS.filter((u) => u.role === "writer" && worksOn(u, site) && u.available !== false);
 
@@ -55,8 +52,6 @@ export function pickReviewer(site: string | null, assignee: string | null): User
   const pool = editorsForSite(site).filter((e) => e.id !== assignee);
   return pool[0] ?? null;
 }
-
-export const DEFAULT_USER = "lead";
 
 export const roleLabel: Record<Role, string> = {
   writer: "Συντάκτης",

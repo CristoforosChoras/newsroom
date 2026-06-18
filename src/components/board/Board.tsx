@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { COLUMNS, siteById } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { T } from "@/lib/config/strings";
 import Button from "@/components/ui/Button";
 import CellCard from "./CellCard";
 import styles from "./Board.module.css";
@@ -49,7 +50,7 @@ export default function Board() {
     <div className={styles.board}>
       <div className={styles.toolbar}>
         <Button icon={Plus} variant="ghost" small onClick={addCell}>
-          New cell
+          {T.board.newCell}
         </Button>
         <Button
           icon={Newspaper}
@@ -57,7 +58,7 @@ export default function Board() {
           small
           onClick={() => void pullInbox()}
         >
-          Λήψη ΑΠΕ-ΜΠΕ
+          {T.board.pullAmna}
         </Button>
         <Button
           icon={User}
@@ -65,24 +66,25 @@ export default function Board() {
           small
           onClick={() => setMine((v) => !v)}
         >
-          Τα δικά μου
+          {T.board.mine}
         </Button>
         <div className={styles.scopeLabel}>
-          {scope === "all" ? "όλα τα sites" : siteById(scope)?.name} · drag
-          μεταξύ σταδίων
+          {T.board.scopeHint(
+            scope === "all" ? T.common.allSites : siteById(scope)?.name ?? "",
+          )}
         </div>
         <div className={styles.slideNav}>
           <button
             className={styles.slideBtn}
             onClick={() => slide(-1)}
-            aria-label="Προηγούμενα στάδια"
+            aria-label={T.board.prevStages}
           >
             <ChevronLeft size={16} />
           </button>
           <button
             className={styles.slideBtn}
             onClick={() => slide(1)}
-            aria-label="Επόμενα στάδια"
+            aria-label={T.board.nextStages}
           >
             <ChevronRight size={16} />
           </button>
@@ -121,7 +123,9 @@ export default function Board() {
                 )}
               </div>
               <div className={styles.colBody}>
-                {list.length === 0 && <div className={styles.emptyCol}>Άδειο</div>}
+                {list.length === 0 && (
+                  <div className={styles.emptyCol}>{T.board.empty}</div>
+                )}
                 {list.map((c) => (
                   <CellCard
                     key={c.id}
