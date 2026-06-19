@@ -1,0 +1,39 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Introduction" />
+
+# MATRIX Newsroom Core
+
+An AI-assisted newsroom dashboard for a multi-portal Greek WordPress network
+(Sportal, OutsidersBet, OnlyAuto, Exodos, Klik, Muse, and the placeholder
+politics portal Popaganda). The UI strings are Greek; the code, types and these
+docs are English.
+
+## Architecture at a glance
+
+- **Next.js 16 App Router + React 19**, plain **CSS Modules** + a tokenized
+  global stylesheet (`src/app/globals.css`), dark/light theming via
+  `[data-theme]` on `<html>`.
+- **State**: a single **zustand** store, [`useNewsroom`](?path=/docs/docs-store-usenewsroom--docs),
+  consumed directly by components (not via props). It persists to `localStorage`
+  (`skipHydration` — the browser rehydrates manually).
+- **The backend seam**: components/store call thin functions in
+  `src/lib/services/*`, which POST to Next route handlers under `/api/agents/*`,
+  which in turn proxy **n8n** workflows (AMNA wire ingestion, Social Radar
+  trends/gaps, SEO retrospective, KPI/GA4) and **Claude** (routing & drafting).
+  See [Services](?path=/docs/docs-services--docs).
+- **No mock data**: services return real data or `null` on failure (the store
+  then flashes an offline notice). The seed state is intentionally empty.
+
+## How this Storybook is organized
+
+- **UI/** — reusable presentational primitives (Button, Panel, Stat, SiteTag…),
+  documented with auto-generated prop tables.
+- **Board/**, **Views/**, **Shell/** — feature components. Store-coupled views are
+  rendered through a decorator that seeds the zustand store with sample data
+  (the real seed is empty), so they show realistic content here.
+- **Docs/** — these written guides for the non-visual logic: the store, the
+  service layer, theming, and the publish gate.
+
+Use the **theme switch** in the toolbar to preview every component in dark and
+light. It toggles the same `data-theme` attribute the real app uses.

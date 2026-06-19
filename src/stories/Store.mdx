@@ -1,0 +1,67 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Store (useNewsroom)" />
+
+# The store — `useNewsroom`
+
+A single zustand store (`src/lib/store/useNewsroom.ts`) holds all app state and
+actions. Components subscribe with selectors, e.g.
+`const cells = useNewsroom((s) => s.cells)`. Type: `Store = NewsroomState & UiState & Actions`.
+
+It is wrapped in `persist` (key `newsroom-v4`, `localStorage`) with
+**`skipHydration: true`** — the browser rehydrates manually (`StoreHydration`),
+which keeps SSR output deterministic.
+
+## State
+
+- **`NewsroomState`** — `scope`, `currentUser`, `cells`, `trends`, `gaps`,
+  `reports`, `agents`, `siteKpi`, `seo`, `network`. All collections start empty
+  and fill only from real backends.
+- **`UiState`** — `open` (cell id shown in the drawer), `editing` (cell id in the
+  full-screen editor), `toast` (transient message).
+
+## Actions
+
+### Board & cells
+- **`addCell()`** → creates a blank cell in `inbox`, returns its id.
+- **`move(id, status)`** — manual stage change (drag / chips). This is the
+  lead-style override path and bypasses role guards.
+- **`updateCell(id, patch)`** — patch any cell fields (used by the editor).
+- **`reroute(id)`** — AI re-route via the router service; updates `site`/`confidence`.
+
+### Two-person editorial flow (role-guarded by `currentUser`)
+- **`assign(id, writerId?)`** — assign to a writer (round-robin if omitted);
+  rests in `assigned`, or jumps to `ai_draft` when the site has `autoDraft`.
+- **`generateDraft(id)`** — calls the draft service (Claude via n8n), applies the
+  result and advances to `ai_draft`; on failure it still opens the stage and
+  flashes an offline notice.
+- **`submitForReview(id, editorId?)`** — moves to `review`; picks a reviewer who
+  is **not** the assignee.
+- **`sendBack(id, note)`** — returns to the writer with an editor note
+  (`returnedFromReview` badge), same assignee.
+- **`approveAndPublish(id)`** — blocked by the [publish gate](?path=/docs/docs-publish-gate--docs);
+  on pass it publishes to WP and auto-creates the social/newsletter promo.
+- **`reassign(id, writerId)`** — change the assignee (lead/editor).
+
+### Agent outputs
+- **`scanTrends()` / `findGaps(scope)`** — fetch Social Radar ideas → `trends` / `gaps`.
+- **`createCellFromTrend(trend)` / `createCellFromGap(gap)`** — spawn a cell from an idea (returns id).
+- **`dismissGap(id)`** — suppress a gap (writes idea state back).
+- **`pullInbox()`** — pull ingested AMNA wire cells, dedupe by `originalId`,
+  prepend new ones; returns the count added.
+- **`runSeoRetro()` / `runKPI()`** — fetch the SEO retrospective / KPI snapshot into `reports` + dashboard metrics.
+- **`morning()`** — the "update network" batch (KPI + inbox).
+- **`toggleAgent(id)`** — flip an agent on/off.
+
+### UI
+- **`setScope(scope)`** — `"all"` or a site id (filters the board/dashboard).
+- **`setCurrentUser(userId)`** — dev current-user switch (drives role gating).
+- **`openCell/closeCell`**, **`openEditor/closeEditor`**, **`clearReports`**.
+- **`flash(msg)`** — show a toast for ~2.6s.
+
+## Using it in Storybook
+
+The real seed is empty, so store-coupled stories use the **`withStore`** decorator
+(`.storybook/fixtures.tsx`) which calls `useNewsroom.setState(...)` with sample
+`cells/trends/gaps/reports/siteKpi/network` before each story and resets per
+story. Pass overrides like `withStore({ open: "c_review" })`.

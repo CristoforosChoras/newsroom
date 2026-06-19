@@ -21,6 +21,7 @@ import {
 import { siteById } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
 import { slugify } from "@/lib/utils/slug";
+import { T } from "@/lib/config/strings";
 import Button from "@/components/ui/Button";
 import Panel from "@/components/ui/Panel";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -33,23 +34,23 @@ function countWords(text: string): number {
 }
 
 const TOOLS = [
-  { cmd: "formatBlock", arg: "<p>", icon: Pilcrow, title: "Παράγραφος" },
-  { cmd: "formatBlock", arg: "<h2>", icon: Heading2, title: "Επικεφαλίδα H2" },
-  { cmd: "formatBlock", arg: "<h3>", icon: Heading3, title: "Επικεφαλίδα H3" },
-  { cmd: "bold", arg: undefined, icon: Bold, title: "Έντονα" },
-  { cmd: "italic", arg: undefined, icon: Italic, title: "Πλάγια" },
-  { cmd: "insertUnorderedList", arg: undefined, icon: List, title: "Λίστα" },
+  { cmd: "formatBlock", arg: "<p>", icon: Pilcrow, title: T.editor.tools.paragraph },
+  { cmd: "formatBlock", arg: "<h2>", icon: Heading2, title: T.editor.tools.h2 },
+  { cmd: "formatBlock", arg: "<h3>", icon: Heading3, title: T.editor.tools.h3 },
+  { cmd: "bold", arg: undefined, icon: Bold, title: T.editor.tools.bold },
+  { cmd: "italic", arg: undefined, icon: Italic, title: T.editor.tools.italic },
+  { cmd: "insertUnorderedList", arg: undefined, icon: List, title: T.editor.tools.list },
   {
     cmd: "insertOrderedList",
     arg: undefined,
     icon: ListOrdered,
-    title: "Αριθμημένη λίστα",
+    title: T.editor.tools.orderedList,
   },
   {
     cmd: "formatBlock",
     arg: "<blockquote>",
     icon: Quote,
-    title: "Παράθεση",
+    title: T.editor.tools.quote,
   },
 ] as const;
 
@@ -93,7 +94,7 @@ export default function ArticleEditor() {
   };
 
   const onLink = () => {
-    const url = window.prompt("URL συνδέσμου:", "https://");
+    const url = window.prompt(T.editor.linkPrompt, "https://");
     if (url) exec("createLink", url);
   };
 
@@ -124,12 +125,13 @@ export default function ArticleEditor() {
         {/* top bar */}
         <div className={styles.topbar}>
           <SiteTag id={c.site} />
-          <span className={styles.topTitle}>Επεξεργασία άρθρου</span>
+          <span className={styles.topTitle}>{T.editor.title}</span>
           <div className={styles.topActions}>
             {c.wpPostId ? (
               <span className={styles.publishedTop}>
                 <CheckCircle2 size={16} />
-                {site ? "Ενημερωμένο" : "Δημοσιευμένο"} · #{c.wpPostId}
+                {site ? T.editor.updated : T.editor.published}
+                {T.editor.publishedHash(c.wpPostId)}
               </span>
             ) : (
               <Button
@@ -138,10 +140,10 @@ export default function ArticleEditor() {
                 disabled={!site}
                 onClick={() => publishWP(c.id)}
               >
-                Δημοσίευση {site ? `στο ${site.name}` : ""}
+                {T.editor.publish(site?.name)}
               </Button>
             )}
-            <button className={styles.closeBtn} onClick={close} aria-label="Κλείσιμο">
+            <button className={styles.closeBtn} onClick={close} aria-label={T.editor.close}>
               <X size={20} />
             </button>
           </div>
@@ -150,23 +152,23 @@ export default function ArticleEditor() {
         <div className={styles.body}>
           {/* main column */}
           <div className={styles.main}>
-            <label className={styles.fieldLabel}>Τίτλος</label>
+            <label className={styles.fieldLabel}>{T.editor.fieldTitle}</label>
             <input
               className={styles.titleInput}
               value={c.headline}
-              placeholder="Τίτλος άρθρου"
+              placeholder={T.editor.titlePlaceholder}
               onChange={(e) => onTitle(e.target.value)}
             />
 
             <div className={styles.permalink}>
               <Link2 size={12} />
               <span className={styles.permaPrefix}>
-                {site ? site.wp : "site"}/
+                {site ? site.wp : T.editor.sitePrefixFallback}/
               </span>
               <input
                 className={styles.slugInput}
                 value={c.slug ?? ""}
-                placeholder="slug"
+                placeholder={T.editor.slugPlaceholder}
                 onChange={(e) => {
                   setSlugTouched(true);
                   updateCell(c.id, { slug: slugify(e.target.value) });
@@ -174,7 +176,7 @@ export default function ArticleEditor() {
               />
             </div>
 
-            <label className={styles.fieldLabel}>Κείμενο</label>
+            <label className={styles.fieldLabel}>{T.editor.fieldBody}</label>
             <div className={styles.toolbar}>
               {TOOLS.map((t, i) => (
                 <button
@@ -190,7 +192,7 @@ export default function ArticleEditor() {
               ))}
               <button
                 type="button"
-                title="Σύνδεσμος"
+                title={T.editor.tools.link}
                 className={styles.tool}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={onLink}
@@ -204,16 +206,14 @@ export default function ArticleEditor() {
               contentEditable
               suppressContentEditableWarning
               onInput={saveBody}
-              data-placeholder="Γράψε το άρθρο εδώ…"
+              data-placeholder={T.editor.bodyPlaceholder}
             />
 
             <div className={styles.statsFooter}>
               <span>
-                <strong>{words}</strong> Λέξεις
+                <strong>{words}</strong> {T.editor.words}
               </span>
-              <span>
-                {readingMin}′ χρόνος ανάγνωσης
-              </span>
+              <span>{T.editor.readingTime(readingMin)}</span>
             </div>
           </div>
 
@@ -222,7 +222,7 @@ export default function ArticleEditor() {
             className={styles.panelToggle}
             onClick={() => setPanelOpen((o) => !o)}
           >
-            <span>Άρθρο &amp; SEO</span>
+            <span>{T.editor.panelToggle}</span>
             <ChevronDown
               size={16}
               style={{ transform: panelOpen ? "rotate(180deg)" : "none" }}
@@ -236,7 +236,7 @@ export default function ArticleEditor() {
               .join(" ")}
           >
             <Panel pad={14}>
-              <Eyebrow icon={Send}>Δημοσίευση</Eyebrow>
+              <Eyebrow icon={Send}>{T.editor.publishSection}</Eyebrow>
               {site ? (
                 <>
                   <div className={styles.publishSite}>
@@ -247,7 +247,7 @@ export default function ArticleEditor() {
                     {site.wp}/wp-json/wp/v2/posts
                   </div>
                   <div className={styles.catLine}>
-                    Κατηγορία:{" "}
+                    {T.editor.categoryLabel}{" "}
                     <span style={{ color: site.color }}>
                       {c.category || site.wpCat}
                     </span>
@@ -255,7 +255,7 @@ export default function ArticleEditor() {
                   {c.wpPostId ? (
                     <div className={styles.published}>
                       <CheckCircle2 size={16} />
-                      Δημοσιευμένο · post #{c.wpPostId}
+                      {T.editor.publishedPost(c.wpPostId)}
                     </div>
                   ) : (
                     <Button
@@ -263,34 +263,32 @@ export default function ArticleEditor() {
                       loading={c._publishing}
                       onClick={() => publishWP(c.id)}
                     >
-                      Publish to {site.name}
+                      {T.editor.publishTo(site.name)}
                     </Button>
                   )}
                 </>
               ) : (
-                <div className={styles.hint}>
-                  Ανάθεσε ένα site για δημοσίευση.
-                </div>
+                <div className={styles.hint}>{T.editor.assignSiteHint}</div>
               )}
             </Panel>
 
             <Panel pad={14}>
-              <Eyebrow>Περίληψη</Eyebrow>
+              <Eyebrow>{T.editor.excerpt}</Eyebrow>
               <textarea
                 className={styles.textarea}
                 value={excerpt}
-                placeholder="Σύντομη περίληψη του άρθρου…"
+                placeholder={T.editor.excerptPlaceholder}
                 onChange={(e) => updateCell(c.id, { excerpt: e.target.value })}
               />
-              <div className={styles.counter}>{excerpt.length} χαρακτήρες</div>
+              <div className={styles.counter}>{T.common.chars(excerpt.length)}</div>
             </Panel>
 
             <Panel pad={14}>
-              <Eyebrow icon={ImageIcon}>Κεντρική εικόνα</Eyebrow>
+              <Eyebrow icon={ImageIcon}>{T.editor.featuredImage}</Eyebrow>
               <input
                 className={styles.input}
                 value={c.featured ?? ""}
-                placeholder="https://… (URL εικόνας)"
+                placeholder={T.editor.imageUrlPlaceholder}
                 onChange={(e) => updateCell(c.id, { featured: e.target.value })}
               />
               <div className={styles.preview}>
@@ -304,31 +302,31 @@ export default function ArticleEditor() {
                 ) : (
                   <div className={styles.previewEmpty}>
                     <ImageIcon size={20} />
-                    Καμία εικόνα
+                    {T.editor.noImage}
                   </div>
                 )}
               </div>
             </Panel>
 
             <Panel pad={14}>
-              <Eyebrow>Κατηγορία</Eyebrow>
+              <Eyebrow>{T.editor.category}</Eyebrow>
               <input
                 className={styles.input}
                 value={c.category ?? ""}
-                placeholder={site?.wpCat ?? "Κατηγορία"}
+                placeholder={site?.wpCat ?? T.editor.category}
                 onChange={(e) => updateCell(c.id, { category: e.target.value })}
               />
             </Panel>
 
             <Panel pad={14}>
-              <Eyebrow>Ετικέτες</Eyebrow>
+              <Eyebrow>{T.editor.tags}</Eyebrow>
               <div className={styles.tags}>
                 {(c.tags ?? []).map((t) => (
                   <span
                     key={t}
                     className={styles.tag}
                     onClick={() => removeTag(t)}
-                    title="Αφαίρεση"
+                    title={T.editor.removeTag}
                   >
                     {t}
                     <X size={11} />
@@ -338,7 +336,7 @@ export default function ArticleEditor() {
               <input
                 className={styles.input}
                 value={tagInput}
-                placeholder="Πρόσθεσε ετικέτα + Enter"
+                placeholder={T.editor.addTagPlaceholder}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -350,12 +348,12 @@ export default function ArticleEditor() {
             </Panel>
 
             <Panel pad={14}>
-              <Eyebrow>SEO</Eyebrow>
-              <label className={styles.subLabel}>SEO τίτλος</label>
+              <Eyebrow>{T.editor.seo}</Eyebrow>
+              <label className={styles.subLabel}>{T.editor.seoTitleLabel}</label>
               <input
                 className={styles.input}
                 value={seoTitle}
-                placeholder="SEO τίτλος"
+                placeholder={T.editor.seoTitlePlaceholder}
                 onChange={(e) => updateCell(c.id, { seoTitle: e.target.value })}
               />
               <div
@@ -365,13 +363,13 @@ export default function ArticleEditor() {
                     seoTitle.length > 60 ? "var(--amber)" : "var(--faint)",
                 }}
               >
-                {seoTitle.length}/60 χαρακτήρες
+                {T.editor.seoTitleCounter(seoTitle.length)}
               </div>
-              <label className={styles.subLabel}>Meta περιγραφή</label>
+              <label className={styles.subLabel}>{T.editor.metaDescLabel}</label>
               <textarea
                 className={styles.textarea}
                 value={seoDesc}
-                placeholder="Meta περιγραφή (150–160)"
+                placeholder={T.editor.metaDescPlaceholder}
                 onChange={(e) => updateCell(c.id, { seoDesc: e.target.value })}
               />
               <div
@@ -383,7 +381,7 @@ export default function ArticleEditor() {
                       : "var(--faint)",
                 }}
               >
-                {seoDesc.length}/160 χαρακτήρες
+                {T.editor.metaDescCounter(seoDesc.length)}
               </div>
             </Panel>
           </aside>

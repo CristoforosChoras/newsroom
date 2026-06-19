@@ -1,0 +1,460 @@
+{
+  "name": "AMNA Newsfeed (MATRIX)",
+  "nodes": [
+    {
+      "id": "sched",
+      "name": "Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -360,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "hook",
+      "name": "Kick",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -360,
+        180
+      ],
+      "webhookId": "06d95101-f16d-4dbe-ad93-f0808ace12a4",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "matrix-amna-run",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "id": "loadcad",
+      "name": "Load Cadence",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -160,
+        -160
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "u0RMheQO8Ug6d8Um",
+          "cachedResultName": "trend_config"
+        },
+        "returnAll": true
+      }
+    },
+    {
+      "id": "cadgate",
+      "name": "Cadence Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Stateless cadence: fire once per interval window. interval<=0 => manual only.\nconst cfg = {}; for (const r of $input.all()) { if (r.json && r.json.name) cfg[r.json.name] = r.json.value; }\nconst interval = parseInt(cfg.amna_interval_min || '0', 10) || 0;\nif (interval <= 0) return [];\nconst base = 5; // must match the Schedule trigger tick (minutes)\nconst d = new Date();\nconst mins = d.getHours() * 60 + d.getMinutes();\nif (mins % interval < base) return [{ json: { due: true, interval, mins } }];\nreturn [];"
+      }
+    },
+    {
+      "id": "loadex",
+      "name": "Load Existing",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        0
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "PaMCPDCAStndcYW7",
+          "cachedResultName": "amna_cells"
+        },
+        "returnAll": true
+      }
+    },
+    {
+      "id": "fetchcatch",
+      "name": "Fetch Catch-up",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Page the AMNA newsroom API newest-first, emit only articles NEWER than the\n// frontier (max already-stored id). AMNA ids are monotonic, so cursor = max seen\n// id bounds paging to just the gap since last run (robust to a sparse seen-set).\nconst UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';\nconst helperObj = (this && this.helpers) ? this.helpers : (typeof $helpers!=='undefined' ? $helpers : null);\nif(!helperObj || !helperObj.httpRequest) throw new Error('httpRequest helper unavailable');\nconst httpReq = (opts) => helperObj.httpRequest.call(helperObj, opts);\nconst seen=new Set(); let cursor=0;\nfor(const it of $input.all()){ const id=it.json && it.json.originalId; if(id!==undefined && id!==null && id!==''){ seen.add(String(id)); const n=parseInt(id,10); if(isFinite(n) && n>cursor) cursor=n; } }\nconst PAGE=50, MAX_PAGES=12; // cold-start cap = 600; normal runs stop at the cursor\nconst base='https://www.amna.gr/feeds/getfolder.php';\nconst emitted=new Set(); const out=[];\nlet pages=0, scanned=0, stop=false;\nfor(let p=0;p<MAX_PAGES && !stop;p++){\n  const qs={ id:'46', infolevel:'FULL', offset:String(p*PAGE), numrows:String(PAGE), kind:'article', byrole:'false', subfolders:'true', order:'[[\"c_timestamp\",\"desc\"]]', exclude:'' };\n  let data;\n  try{ data = await httpReq({ method:'GET', url:base, qs, headers:{'User-Agent':UA}, json:true, timeout:30000 }); }\n  catch(e){ console.log('AMNA fetch page '+p+' failed: '+(e.message||e)); break; }\n  const items=Array.isArray(data)?data:[];\n  pages++; scanned+=items.length;\n  if(items.length===0) break;\n  let pageMax=0;\n  for(const it of items){ const n=parseInt(it.id,10); if(isFinite(n) && n>pageMax) pageMax=n; }\n  for(const it of items){\n    const id=String(it.id); const n=parseInt(it.id,10);\n    if(isFinite(n) && n>cursor && !seen.has(id) && !emitted.has(id)){ emitted.add(id); out.push({json:it}); }\n  }\n  if(cursor>0 && pageMax<=cursor) stop=true; // whole page older than frontier => caught up\n  if(items.length<PAGE) stop=true;          // end of archive\n}\nconsole.log(`AMNA scan: cursor=${cursor} pages=${pages} scanned=${scanned} new=${out.length}`);\nreturn out;"
+      }
+    },
+    {
+      "id": "norm",
+      "name": "Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Map raw AMNA items -> board-cell rows (original content, status inbox).\nconst strip=(s)=>String(s||'').replace(/<[^>]+>/g,' ').replace(/&[^;]+;/g,' ').replace(/\\s+/g,' ').trim();\nconst out=[];\nfor(const i of $input.all()){\n  const it=i.json; const id=it.id; if(!id) continue;\n  const note2=String(it.note2||'home').replace(/^\\/+|\\/+$/g,'');\n  const slug=String(it.note3||'');\n  const url=`https://www.amna.gr/${note2}/article/${id}`+(slug?('/'+slug):'');\n  const bodyHtml=String(it.text||it.html_text||'');\n  const text=strip(bodyHtml);\n  const title=String(it.title||'').trim();\n  if(!title) continue;\n  const photo=String(it.photo1||'');\n  const image=photo?('https://www.amna.gr/'+photo.replace(/^\\.\\.\\//,'').replace(/^\\/+/,'')):'';\n  const lead=strip(it.lead||it.abstract||'').slice(0,300);\n  const breaking=/εκτακτο|έκτακτο/i.test(title+' '+text.slice(0,200));\n  out.push({json:{\n    originalId:String(id), originalUrl:url, source:'ΑΠΕ-ΜΠΕ',\n    headline:title, body:bodyHtml||('<p>'+text+'</p>'), sourceText:text.slice(0,8000),\n    meta:lead, titles:'[]', keywords:'[]',\n    section:note2, image, publishedAt:String(it.c_daytime||''),\n    urgency: breaking?'breaking':'standard', status:'inbox', pulled:false,\n    createdMs: Date.now()\n  }});\n}\nout.sort((a,b)=>String(a.json.publishedAt).localeCompare(String(b.json.publishedAt)));\nreturn out;"
+      }
+    },
+    {
+      "id": "routesec",
+      "name": "Route by Section",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const PORTALS={\n  sportal:{name:'Sportal',vertical:'sports',values:'αθλητική ειδησεογραφία, άμεσο και ζωντανό ύφος'},\n  onlyauto:{name:'OnlyAuto',vertical:'auto',values:'αυτοκίνητο και τεχνολογία οχημάτων'},\n  muse:{name:'Muse',vertical:'lifestyle',values:'lifestyle, υγεία, ευεξία, ταξίδι'},\n  klik:{name:'Klik',vertical:'entertainment',values:'showbiz, πολιτισμός, τηλεόραση, viral'},\n  popaganda:{name:'Popaganda',vertical:'politics',values:'πολιτική και γενική ειδησεογραφία, νηφάλιο και ακριβές ύφος'}\n};\nconst MAP={\n  sport:'sportal',sports:'sportal',\n  auto:'onlyauto',cars:'onlyauto',\n  life:'muse',health:'muse',tourism:'muse',gastronomy:'muse',travel:'muse',\n  culture:'klik',media:'klik',showbiz:'klik',entertainment:'klik',\n  home:'popaganda',politics:'popaganda',greece:'popaganda',macedonia:'popaganda',\n  business:'popaganda',economy:'popaganda',world:'popaganda',international:'popaganda',\n  eu:'popaganda',environment:'popaganda',science:'popaganda',tech:'popaganda'\n};\nconst out=[];\nfor(const i of $input.all()){\n  const a=i.json;\n  const sec=String(a.section||'').toLowerCase();\n  let site=MAP[sec]||'popaganda';\n  const p=PORTALS[site]||PORTALS.popaganda;\n  out.push({json:{...a, site, siteName:p.name, vertical:p.vertical, routeReason:`AMNA section «${a.section}» → ${p.name}`, routeConfidence:1}});\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "save",
+      "name": "Save Cell",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ],
+      "continueOnFail": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "parameters": {
+        "resource": "row",
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "PaMCPDCAStndcYW7",
+          "cachedResultName": "amna_cells"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "originalId",
+              "condition": "eq",
+              "keyValue": "={{ $json.originalId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "originalId"
+          ],
+          "value": {
+            "originalId": "={{ $json.originalId }}",
+            "originalUrl": "={{ $json.originalUrl }}",
+            "source": "={{ $json.source }}",
+            "site": "={{ $json.site }}",
+            "routeReason": "={{ $json.routeReason }}",
+            "routeConfidence": "={{ $json.routeConfidence }}",
+            "urgency": "={{ $json.urgency }}",
+            "status": "={{ $json.status }}",
+            "headline": "={{ $json.headline }}",
+            "body": "={{ $json.body }}",
+            "titles": "={{ $json.titles }}",
+            "meta": "={{ $json.meta }}",
+            "keywords": "={{ $json.keywords }}",
+            "sourceText": "={{ $json.sourceText }}",
+            "image": "={{ $json.image }}",
+            "section": "={{ $json.section }}",
+            "publishedAt": "={{ $json.publishedAt }}",
+            "createdMs": "={{ $json.createdMs }}",
+            "pulled": "={{ $json.pulled }}"
+          },
+          "schema": [
+            {
+              "id": "originalId",
+              "displayName": "originalId",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "originalUrl",
+              "displayName": "originalUrl",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "site",
+              "displayName": "site",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "routeReason",
+              "displayName": "routeReason",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "routeConfidence",
+              "displayName": "routeConfidence",
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "titles",
+              "displayName": "titles",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "meta",
+              "displayName": "meta",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "keywords",
+              "displayName": "keywords",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "sourceText",
+              "displayName": "sourceText",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "image",
+              "displayName": "image",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "section",
+              "displayName": "section",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "publishedAt",
+              "displayName": "publishedAt",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "createdMs",
+              "displayName": "createdMs",
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "pulled",
+              "displayName": "pulled",
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "display": true
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "runlog",
+      "name": "Run Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const newN=$('Fetch Catch-up').all().length;\nlet written=0; try{ written=$('Save Cell').all().length; }catch(e){}\nconst failed=newN-written;\nconsole.log(`AMNA newsfeed run: new=${newN} written=${written} failed=${failed}`);\nreturn [{ json:{ newCount:newN, written, failed, at:new Date().toISOString() } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Schedule": {
+      "main": [
+        [
+          {
+            "node": "Load Cadence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Cadence": {
+      "main": [
+        [
+          {
+            "node": "Cadence Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cadence Gate": {
+      "main": [
+        [
+          {
+            "node": "Load Existing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kick": {
+      "main": [
+        [
+          {
+            "node": "Load Existing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Existing": {
+      "main": [
+        [
+          {
+            "node": "Fetch Catch-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Catch-up": {
+      "main": [
+        [
+          {
+            "node": "Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize": {
+      "main": [
+        [
+          {
+            "node": "Route by Section",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Section": {
+      "main": [
+        [
+          {
+            "node": "Save Cell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Cell": {
+      "main": [
+        [
+          {
+            "node": "Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

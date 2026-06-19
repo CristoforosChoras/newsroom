@@ -6,7 +6,8 @@ export type Vertical =
   | "betting"
   | "auto"
   | "entertainment"
-  | "lifestyle";
+  | "lifestyle"
+  | "politics";
 
 // Board v2 — 5-stage flow. Two distinct people own a cell across the stages:
 // the assignee (writer, owns inbox→ai_draft) and the reviewer (editor, review).

@@ -18,6 +18,7 @@ export const VERTICALS: Record<Vertical, string> = {
   auto: "Αυτοκίνητο",
   entertainment: "Ψυχαγωγία",
   lifestyle: "Lifestyle",
+  politics: "Πολιτική",
 };
 
 export const SITES: Site[] = [
@@ -154,6 +155,31 @@ export const SITES: Site[] = [
       "style",
       "φοριέται",
       "skincare",
+    ],
+  },
+  // PLACEHOLDER (idea stage, added 2026-06-18): a politics portal so political
+  // wire (e.g. AMNA) has a home. Not yet a live WP target — kept here so it shows
+  // up across the routing/board UI; wire up wp/seoKey when the site is real.
+  {
+    id: "popaganda",
+    name: "Popaganda",
+    vertical: "politics",
+    color: "#0EA5E9",
+    wp: "popaganda.gr",
+    wpCat: "Πολιτική",
+    seoKey: "popaganda.gr",
+    kw: [
+      "πολιτική",
+      "κυβέρνηση",
+      "βουλή",
+      "εκλογές",
+      "υπουργός",
+      "πρωθυπουργός",
+      "κόμμα",
+      "βουλευτής",
+      "διεθνή",
+      "οικονομία",
+      "νομοσχέδιο",
     ],
   },
 ];

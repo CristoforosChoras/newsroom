@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
+import { T } from "@/lib/config/strings";
 import styles from "./ThemeToggle.module.css";
 
 type Theme = "light" | "dark";
@@ -40,8 +41,8 @@ export default function ThemeToggle() {
       type="button"
       role="switch"
       aria-checked={light}
-      aria-label={light ? "Σκούρο θέμα" : "Φωτεινό θέμα"}
-      title={light ? "Εναλλαγή σε σκούρο" : "Εναλλαγή σε φωτεινό"}
+      aria-label={light ? T.theme.toDark : T.theme.toLight}
+      title={light ? T.theme.switchToDark : T.theme.switchToLight}
       onClick={toggle}
       className={[styles.switch, light ? styles.on : ""].filter(Boolean).join(" ")}
     >

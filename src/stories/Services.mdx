@@ -1,0 +1,44 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Services" />
+
+# The service layer (`src/lib/services/*`)
+
+Thin functions that the store/components call. Each one POSTs to a Next route
+handler under `src/app/api/agents/*`, which proxies an **n8n** workflow (and
+sometimes **Claude**). The shared secret stays server-side.
+
+**Contract:** services return real data or **`null` on failure — never mock data**.
+The store turns `null` into a flashed offline notice, so the UI never shows fake
+content. The one exception is the deterministic router fallback (below).
+
+## `agents.ts`
+- **`rerouteStory(cell)` → `RouteResult`** — AI classifier (`/api/agents/route` →
+  Claude) picks the best portal. Falls back to the deterministic keyword router
+  (`sampleRoute` → `routeContent`) on any failure, so it always returns a result.
+- **`generateDraft(cell)` → `DraftResult | null`** — Claude writes an SEO draft
+  (`/api/agents/draft`): titles, `seoTitle` (== headline, to pass the gate), meta,
+  excerpt, keywords, HTML body.
+- **`scanTrends(scope)` → `Trend[] | null`** and **`findGaps(scope)` → `Gap[] | null`**
+  — one engine (Social Radar) via `/api/agents/ideas`; projected to Trend / Gap.
+- **`setIdeaState(id, state)`** — write idea state back (assign / dismiss / seen).
+- **`getInbox()` → `Cell[] | null`** — pull ingested AMNA wire cells (`/api/agents/inbox`).
+- **`getAmnaConfig()` / `setAmnaInterval(min)` / `runAmnaIngest()`** — read/set the
+  AMNA ingestion cadence (minutes; `0` = manual) and manually kick a crawl.
+- **`runSeoRetro()` → `SeoRetroResult | null`** — yesterday's SEO retrospective.
+- **`getKpi()` → `KpiResult | null`** — GA4 pageviews + WP article counts snapshot.
+
+## `router.ts`
+- **`routeContent(text)`** — deterministic, accent-insensitive, whole-word keyword
+  router over the site catalog (`config/sites.ts`). Used as the offline fallback
+  for `rerouteStory` and for instant client-side routing.
+
+## `seoGate.ts` — see [Publish Gate](?path=/docs/docs-publish-gate--docs)
+- **`evaluateGate(cell)` → `GateResult`** — runs the shared critical-set.
+- **`canPublish(cell)`** — `true` only when no **critical** blocker remains.
+- **`criticalBlockers(cell)`** — the list of blocking issues for the drawer.
+
+## `wordpress.ts`
+- **`publishToWp(cell)`** — **stub** (`TODO(backend)`): returns a fake post id
+  after a short delay. The publish flow is wired live; only the WP REST POST is
+  stubbed until the backend lands.

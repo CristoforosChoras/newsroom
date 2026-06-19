@@ -26,6 +26,7 @@ import {
 } from "@/lib/config/team";
 import { evaluateGate } from "@/lib/services/seoGate";
 import { timeHM } from "@/lib/utils/time";
+import { T } from "@/lib/config/strings";
 import Button from "@/components/ui/Button";
 import Eyebrow from "@/components/ui/Eyebrow";
 import SiteTag from "@/components/ui/SiteTag";
@@ -68,7 +69,7 @@ export default function CellDrawer() {
         <div className={styles.head}>
           <SiteTag id={c.site} />
           {c.urgency === "breaking" && (
-            <span className={styles.breaking}>BREAKING</span>
+            <span className={styles.breaking}>{T.card.breaking}</span>
           )}
           <X
             size={20}
@@ -90,7 +91,7 @@ export default function CellDrawer() {
         {/* source / original (wire ingestion: ΑΠΕ-ΜΠΕ etc.) */}
         {(c.originalUrl || c.sourceText) && (
           <div className={styles.sourceBlock}>
-            <Eyebrow icon={Link2}>Πηγή / Πρωτότυπο</Eyebrow>
+            <Eyebrow icon={Link2}>{T.drawer.sourceTitle}</Eyebrow>
             <div className={styles.sourceRow}>
               <span className={styles.sourceBadge}>{c.source}</span>
               {c.originalUrl && (
@@ -100,15 +101,14 @@ export default function CellDrawer() {
                   rel="noreferrer"
                   className={styles.sourceLink}
                 >
-                  Άνοιγμα πρωτότυπου ↗
+                  {T.drawer.openOriginal}
                 </a>
               )}
             </div>
             {c.sourceText && (
               <details className={styles.sourceDetails}>
                 <summary className={styles.sourceSummary}>
-                  Πρωτότυπο κείμενο · αναφορά μόνο (δημοσιεύεται το διασκευασμένο
-                  κείμενο)
+                  {T.drawer.originalSummary}
                 </summary>
                 <div className={styles.sourceText}>{c.sourceText}</div>
               </details>
@@ -119,13 +119,15 @@ export default function CellDrawer() {
         {/* ── stage actions (role-aware) ── */}
         <div className={styles.section}>
           <Eyebrow icon={ArrowRight}>
-            Ροή · {COLUMNS.find((col) => col.id === c.status)?.label}
+            {T.drawer.flow(
+              COLUMNS.find((col) => col.id === c.status)?.label ?? "",
+            )}
           </Eyebrow>
 
           {c.status === "inbox" && (
             <div className={styles.stageActions}>
               <Button icon={UserPlus} onClick={() => assign(c.id)}>
-                Αυτόματη ανάθεση
+                {T.drawer.autoAssign}
               </Button>
               {writers.length > 0 && (
                 <select
@@ -133,7 +135,7 @@ export default function CellDrawer() {
                   value=""
                   onChange={(e) => e.target.value && assign(c.id, e.target.value)}
                 >
-                  <option value="">Επιλογή συντάκτη…</option>
+                  <option value="">{T.drawer.pickWriter}</option>
                   {writers.map((w) => (
                     <option key={w.id} value={w.id}>
                       {w.name}
@@ -147,15 +149,20 @@ export default function CellDrawer() {
           {c.status === "assigned" && (
             <div className={styles.stageActions}>
               <div className={styles.owner}>
-                Συντάκτης: <strong>{userById(c.assignee)?.name ?? "—"}</strong>
+                {T.drawer.writer("")}
+                <strong>{userById(c.assignee)?.name ?? "—"}</strong>
               </div>
               {isAssignee ? (
-                <Button icon={Sparkles} onClick={() => generateDraft(c.id)}>
-                  Άνοιγμα draft
+                <Button
+                  icon={Sparkles}
+                  loading={c._drafting}
+                  onClick={() => void generateDraft(c.id)}
+                >
+                  {T.drawer.openDraft}
                 </Button>
               ) : (
                 <div className={styles.hintAmber}>
-                  Ανήκει στον/στην {userById(c.assignee)?.name}.
+                  {T.drawer.belongsTo(userById(c.assignee)?.name ?? "")}
                 </div>
               )}
               {isLead && writers.length > 0 && (
@@ -166,7 +173,7 @@ export default function CellDrawer() {
                     e.target.value && reassign(c.id, e.target.value)
                   }
                 >
-                  <option value="">Επανανάθεση…</option>
+                  <option value="">{T.drawer.reassign}</option>
                   {writers.map((w) => (
                     <option key={w.id} value={w.id}>
                       {w.name}

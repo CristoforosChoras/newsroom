@@ -6,6 +6,7 @@ import { SITES } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
 import { USERS, roleLabel } from "@/lib/config/team";
 import { docFor } from "@/lib/config/pageDocs";
+import { T } from "@/lib/config/strings";
 import Button from "@/components/ui/Button";
 import ThemeToggle from "./ThemeToggle";
 import styles from "./Topbar.module.css";
@@ -34,7 +35,7 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
       <button
         className={styles.menuBtn}
         onClick={onMenu}
-        aria-label="Άνοιγμα μενού"
+        aria-label={T.topbar.openMenu}
       >
         <Menu size={20} />
       </button>
@@ -51,7 +52,7 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
           value={scope}
           onChange={(e) => setScope(e.target.value)}
         >
-          <option value="all">Όλο το δίκτυο</option>
+          <option value="all">{T.topbar.allNetwork}</option>
           {SITES.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -62,7 +63,7 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
       </div>
 
       {/* dev current-user switcher — replaced by real auth next iteration */}
-      <div className={styles.selectWrap} title="Προβολή ως (dev)">
+      <div className={styles.selectWrap} title={T.topbar.viewAsDev}>
         <select
           className={styles.select}
           value={currentUser}
@@ -80,10 +81,10 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
       {showActions && (
         <div className={styles.actions}>
           <Button variant="soft" icon={Newspaper} onClick={onPullAmna} small>
-            Λήψη ΑΠΕ-ΜΠΕ
+            {T.topbar.pullAmna}
           </Button>
           <Button icon={Play} onClick={onMorning}>
-            Ενημέρωση δικτύου
+            {T.topbar.updateNetwork}
           </Button>
         </div>
       )}

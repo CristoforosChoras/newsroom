@@ -16,17 +16,18 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { SITES } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { T } from "@/lib/config/strings";
 import StatusLight from "@/components/ui/StatusLight";
 import styles from "./Sidebar.module.css";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/newsroom", label: "Newsroom", icon: Newspaper },
-  { href: "/trends", label: "Trend Radar", icon: TrendingUp },
-  { href: "/gaps", label: "Content Gaps", icon: Lightbulb },
-  { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/agents", label: "Agents", icon: Bot },
-  { href: "/glossary", label: "Γλωσσάρι", icon: BookOpen },
+  { href: "/", label: T.shell.nav.dashboard, icon: LayoutDashboard },
+  { href: "/newsroom", label: T.shell.nav.newsroom, icon: Newspaper },
+  { href: "/trends", label: T.shell.nav.trends, icon: TrendingUp },
+  { href: "/gaps", label: T.shell.nav.gaps, icon: Lightbulb },
+  { href: "/reports", label: T.shell.nav.reports, icon: FileText },
+  { href: "/agents", label: T.shell.nav.agents, icon: Bot },
+  { href: "/glossary", label: T.shell.nav.glossary, icon: BookOpen },
 ];
 
 interface SidebarProps {
@@ -51,13 +52,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <Radio size={17} color="#0a0a0b" />
           </div>
           <div className={styles.brandText}>
-            <div className={styles.brandName}>MATRIX</div>
-            <div className={styles.brandSub}>NEWSROOM CORE</div>
+            <div className={styles.brandName}>{T.shell.brandName}</div>
+            <div className={styles.brandSub}>{T.shell.brandSub}</div>
           </div>
           <button
             className={styles.closeNav}
             onClick={onClose}
-            aria-label="Κλείσιμο μενού"
+            aria-label={T.shell.closeMenu}
           >
             <X size={18} />
           </button>
@@ -84,7 +85,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         <div className={styles.network}>
-          <div className={styles.networkLabel}>WORDPRESS NETWORK</div>
+          <div className={styles.networkLabel}>{T.shell.networkLabel}</div>
           {SITES.map((s) => {
             const connected = siteKpi[s.id]?.wp;
             return (

@@ -5,22 +5,23 @@ import Link from "next/link";
 import { Plus, PowerOff, RefreshCw } from "lucide-react";
 import type { Trend, TrendLifecycle } from "@/lib/types";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { T } from "@/lib/config/strings";
 import Panel from "@/components/ui/Panel";
 import Button from "@/components/ui/Button";
 import SiteTag from "@/components/ui/SiteTag";
 import styles from "./Trends.module.css";
 
 const LIFECYCLE: Record<TrendLifecycle, { label: string; color: string }> = {
-  emerging: { label: "αναδύεται", color: "var(--green)" },
-  surging: { label: "εκτοξεύεται", color: "var(--orange)" },
-  peaking: { label: "κορυφώνεται", color: "var(--amber)" },
-  fading: { label: "υποχωρεί", color: "var(--faint)" },
+  emerging: { label: T.trends.lifecycle.emerging, color: "var(--green)" },
+  surging: { label: T.trends.lifecycle.surging, color: "var(--orange)" },
+  peaking: { label: T.trends.lifecycle.peaking, color: "var(--amber)" },
+  fading: { label: T.trends.lifecycle.fading, color: "var(--faint)" },
 };
 
 const COVERAGE: Record<string, { label: string; color: string }> = {
-  gap: { label: "κενό κάλυψης", color: "var(--orange)" },
-  partial: { label: "μερική κάλυψη", color: "var(--amber)" },
-  covered: { label: "καλύπτεται", color: "var(--dim)" },
+  gap: { label: T.trends.coverage.gap, color: "var(--orange)" },
+  partial: { label: T.trends.coverage.partial, color: "var(--amber)" },
+  covered: { label: T.trends.coverage.covered, color: "var(--dim)" },
 };
 
 function Sparkline({ data }: { data: number[] }) {
@@ -70,10 +71,7 @@ export default function Trends() {
   return (
     <div>
       <div className={styles.header}>
-        <div className={styles.intro}>
-          Ανερχόμενα θέματα σε YouTube, TikTok, Instagram, Google Trends, X — με
-          ταχύτητα (rate-of-change), προτεινόμενο site και κατάσταση κάλυψης.
-        </div>
+        <div className={styles.intro}>{T.trends.intro}</div>
         <Button
           icon={RefreshCw}
           loading={loading}
@@ -85,20 +83,20 @@ export default function Trends() {
           }}
           style={{ marginLeft: "auto" }}
         >
-          Scan trends now
+          {T.trends.scanNow}
         </Button>
       </div>
 
       {!active && (
         <Panel className={styles.deactivated}>
           <PowerOff size={26} color="var(--faint)" className={styles.deactIcon} />
-          <div className={styles.deactTitle}>Το Trend Radar είναι ανενεργό</div>
+          <div className={styles.deactTitle}>{T.trends.deactivated}</div>
           <div className={styles.deactSub}>
-            Ενεργοποίησέ το από τη σελίδα{" "}
+            {T.deactivatedPanel.prefix}{" "}
             <Link href="/agents" className={styles.deactLink}>
-              Agents
+              {T.deactivatedPanel.link}
             </Link>{" "}
-            για να ξανατρέξει.
+            {T.deactivatedPanel.suffix}
           </div>
         </Panel>
       )}
@@ -164,16 +162,14 @@ export default function Trends() {
                   onClick={() => createCellFromTrend(t)}
                   style={{ marginLeft: "auto" }}
                 >
-                  Create cell
+                  {T.common.createCell}
                 </Button>
               </div>
             </Panel>
           );
         })}
         {list.length === 0 && (
-          <Panel className={styles.empty}>
-            Κανένα trend ακόμη. Πάτησε «Scan trends now».
-          </Panel>
+          <Panel className={styles.empty}>{T.trends.empty}</Panel>
         )}
       </div>
       )}

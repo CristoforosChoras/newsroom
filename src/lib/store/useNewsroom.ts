@@ -19,6 +19,7 @@ import { publishToWp } from "@/lib/services/wordpress";
 import { canPublish, criticalBlockers } from "@/lib/services/seoGate";
 import {
   rerouteStory,
+  generateDraft as generateDraftSvc,
   runSeoRetro as runSeoRetroSvc,
   scanTrends as scanTrendsSvc,
   findGaps as findGapsSvc,
@@ -51,7 +52,7 @@ interface Actions {
   // Board v2 — two-person flow (role-guarded by currentUser)
   setCurrentUser: (userId: string) => void;
   assign: (id: string, writerId?: string) => void;
-  generateDraft: (id: string) => void;
+  generateDraft: (id: string) => Promise<void>;
   submitForReview: (id: string, editorId?: string) => void;
   sendBack: (id: string, note: string) => void;
   approveAndPublish: (id: string) => Promise<void>;
@@ -507,7 +508,7 @@ export const useNewsroom = create<Store>()(
 
       // No AI backend — the AMNA rewrite IS the draft. This opens the AI Draft
       // stage for the assignee to edit. (assignee or lead)
-      generateDraft: (id) => {
+      generateDraft: async (id) => {
         const c = get().cells.find((x) => x.id === id);
         if (!c) return;
         const me = get().currentUser;
@@ -515,13 +516,44 @@ export const useNewsroom = create<Store>()(
           get().flash("Μόνο ο ανατεθειμένος συντάκτης ανοίγει το draft");
           return;
         }
+        // spinner while Claude (via n8n) writes the draft
+        set((s) => ({
+          cells: s.cells.map((x) =>
+            x.id === id ? { ...x, _drafting: true } : x,
+          ),
+        }));
+        const draft = await generateDraftSvc(c);
         set((s) => ({
           cells: s.cells.map((x) =>
             x.id === id
-              ? { ...x, status: "ai_draft", aiVersion: Math.max(1, x.aiVersion) }
+              ? {
+                  ...x,
+                  // apply the AI output when available; advance regardless so the
+                  // writer can always open the editor and continue manually.
+                  ...(draft
+                    ? {
+                        headline: draft.headline?.trim() || x.headline,
+                        titles: draft.titles.length ? draft.titles : x.titles,
+                        meta: draft.meta || x.meta,
+                        seoTitle: draft.seoTitle || x.seoTitle,
+                        excerpt: draft.excerpt || x.excerpt,
+                        keywords: draft.keywords.length
+                          ? draft.keywords
+                          : x.keywords,
+                        tags: draft.keywords.length ? draft.keywords : x.tags,
+                        body: draft.body || x.body,
+                      }
+                    : {}),
+                  status: "ai_draft",
+                  aiVersion: Math.max(1, x.aiVersion + (draft ? 1 : 0)),
+                  _drafting: false,
+                }
               : x,
           ),
         }));
+        get().flash(
+          draft ? "AI draft έτοιμο" : "AI draft: μη διαθέσιμο (backend offline)",
+        );
       },
 
       submitForReview: (id, editorId) => {

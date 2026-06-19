@@ -1,0 +1,35 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Theming" />
+
+# Theming & design tokens
+
+All colors, radii and fonts are CSS custom properties defined in
+`src/app/globals.css`. Components never hardcode brand colors — they read tokens
+like `var(--accent)`, `var(--panel)`, `var(--text)`, `var(--green/amber/red)`.
+
+## Tokens
+
+- **Brand**: `--accent` (purple `#7961f5`), `--accent-2` (teal `#04ab90`).
+  `--orange` is a legacy alias of `--accent` so older components re-theme without
+  edits — **new code should use `--accent`**.
+- **Surfaces / text**: `--bg`, `--panel`, `--panel-2`, `--line`, `--text`,
+  `--dim`, `--faint`.
+- **Status**: `--green`, `--amber`, `--red`, `--blue` (RAG + info).
+- **Shape / type**: `--radius`, `--radius-sm`, `--font-sans`, `--font-mono`.
+
+## Light & dark
+
+The theme is selected by **`data-theme` on `<html>`** (`dark` default, `light`
+alternative). `globals.css` defines the token values under
+`:root, [data-theme="dark"]` and `[data-theme="light"]`, so flipping the attribute
+restyles the whole tree.
+
+- In the **app**: a pre-paint inline script in `layout.tsx` reads
+  `localStorage['matrix-theme']`; `ThemeToggle` (`shell/ThemeToggle.tsx`) flips the
+  attribute via `useSyncExternalStore` (hydration-safe).
+- In **Storybook**: the toolbar theme switch (`@storybook/addon-themes`
+  `withThemeByDataAttribute`) sets the same `data-theme` on the preview root.
+  Toggle it to verify any component in both modes.
+
+When adding a component, style it only through these tokens so it themes for free.

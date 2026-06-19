@@ -20,6 +20,7 @@ import {
   XAxis,
 } from "recharts";
 import { SITES, VERTICALS, siteById } from "@/lib/config/sites";
+import { T } from "@/lib/config/strings";
 import { useNewsroom } from "@/lib/store/useNewsroom";
 import { scopeKpi, scopeWeek } from "@/lib/utils/kpi";
 import { timeHM } from "@/lib/utils/time";
@@ -32,7 +33,7 @@ import StatusLight from "@/components/ui/StatusLight";
 import SlaClock from "@/components/ui/SlaClock";
 import styles from "./Dashboard.module.css";
 
-const SEO_LABEL = { green: "Υγιές", amber: "Προσοχή", red: "Κρίσιμο" } as const;
+const SEO_LABEL = T.dashboard.seoLabel;
 const CHART_ORANGE = "#7961f5"; // brand accent (onlygroup)
 
 export default function Dashboard() {
@@ -78,8 +79,11 @@ export default function Dashboard() {
       {/* portals — the network hero */}
       <Panel>
         <Eyebrow icon={Globe}>
-          WordPress δίκτυο —{" "}
-          {scope === "all" ? "5 portals" : siteById(scope)?.name}
+          {T.dashboard.networkHero(
+            scope === "all"
+              ? T.dashboard.portalsCount(5)
+              : siteById(scope)?.name ?? "",
+          )}
         </Eyebrow>
         <div className={styles.portals}>
           {SITES.map((s) => {
@@ -124,8 +128,11 @@ export default function Dashboard() {
                   }}
                 >
                   {hasMetrics
-                    ? `${sk.delta >= 0 ? "▲" : "▼"} ${Math.abs(sk.delta)}% σήμερα`
-                    : "χωρίς GA4"}
+                    ? T.dashboard.deltaToday(
+                        sk.delta >= 0 ? "▲" : "▼",
+                        Math.abs(sk.delta),
+                      )
+                    : T.dashboard.noGa4Short}
                 </div>
                 <div className={styles.portalWp} style={{ color: "var(--dim)" }}>
                   <Link2 size={11} />
@@ -139,23 +146,23 @@ export default function Dashboard() {
 
       {/* KPI stat cards — only when a metrics backend exists */}
       {!hasMetrics && (
-        <Panel className={styles.noData}>
-          📊 Μετρήσεις (pageviews/SLA/top άρθρα) μη διαθέσιμες — απαιτείται σύνδεση
-          Google Analytics (GA4). Δεν εμφανίζονται εικονικά δεδομένα.
-        </Panel>
+        <Panel className={styles.noData}>{T.dashboard.metricsUnavailable}</Panel>
       )}
       {hasMetrics && (
       <div className={styles.stats}>
         <Stat
-          label="Pageviews σήμερα"
+          label={T.dashboard.statViewsToday}
           value={`${(k.views / 1000).toFixed(1)}K`}
-          sub={`${k.delta >= 0 ? "▲" : "▼"} ${Math.abs(k.delta)}% vs χθες`}
+          sub={T.dashboard.statViewsSub(
+            k.delta >= 0 ? "▲" : "▼",
+            Math.abs(k.delta),
+          )}
           subColor={k.delta >= 0 ? "var(--green)" : "var(--red)"}
         />
         <Stat
-          label="Breaking SLA hit"
+          label={T.dashboard.statSla}
           value={k.slaHit == null ? "—" : `${k.slaHit}%`}
-          sub={k.slaHit == null ? "καμία breaking στην ουρά" : "στόχος < 2′"}
+          sub={k.slaHit == null ? T.dashboard.slaNone : T.dashboard.slaTarget}
           subColor={
             k.slaHit == null
               ? "var(--dim)"
@@ -165,15 +172,15 @@ export default function Dashboard() {
           }
         />
         <Stat
-          label="Άρθρα σήμερα"
+          label={T.dashboard.statArticlesToday}
           value={k.articles}
-          sub={`${breaking.length} breaking στην ουρά`}
+          sub={T.dashboard.breakingInQueue(breaking.length)}
           subColor={breaking.length ? "var(--orange)" : "var(--dim)"}
         />
         <Stat
-          label="Sites ενεργά"
+          label={T.dashboard.statSitesActive}
           value={`${activeSites}/6`}
-          sub="WordPress συνδεδεμένα"
+          sub={T.dashboard.sitesConnected}
           subColor="var(--dim)"
         />
       </div>
@@ -182,13 +189,11 @@ export default function Dashboard() {
       <div className={styles.grid}>
         <Panel>
           <Eyebrow icon={Activity}>
-            Pageviews — 7 ημέρες{" "}
+            {T.dashboard.pageviews7d}{" "}
             {scope !== "all" && `· ${siteById(scope)?.name}`}
           </Eyebrow>
           {week.length === 0 ? (
-            <div className={styles.empty}>
-              Δεν υπάρχουν δεδομένα pageviews — απαιτείται GA4.
-            </div>
+            <div className={styles.empty}>{T.dashboard.noPageviews}</div>
           ) : (
           <div className={styles.chart}>
             <ResponsiveContainer width="100%" height="100%">
@@ -239,11 +244,9 @@ export default function Dashboard() {
           </div>
           )}
           <div className={styles.topWrap}>
-            <Eyebrow icon={FileText}>Top άρθρα</Eyebrow>
+            <Eyebrow icon={FileText}>{T.dashboard.topArticles}</Eyebrow>
             {top.length === 0 && (
-              <div className={styles.empty}>
-                Δεν υπάρχουν άρθρα για αυτό το site σήμερα.
-              </div>
+              <div className={styles.empty}>{T.dashboard.noTopArticles}</div>
             )}
             {top.map((a, i) => (
               <div key={i} className={styles.topRow}>
@@ -261,9 +264,9 @@ export default function Dashboard() {
         <div className={styles.rightCol}>
           <Panel>
             <div className={styles.panelHead}>
-              <Eyebrow icon={Gauge}>SEO — Χθεσινή</Eyebrow>
+              <Eyebrow icon={Gauge}>{T.dashboard.seoYesterday}</Eyebrow>
               <Button variant="ghost" small icon={History} onClick={runSeoRetro}>
-                Χθεσινή
+                {T.dashboard.seoYesterdayShort}
               </Button>
             </div>
             {retro ? (
@@ -286,17 +289,15 @@ export default function Dashboard() {
                 ))}
               </>
             ) : (
-              <div className={styles.empty}>
-                Δεν έχει τρέξει ακόμη — πάτησε «Χθεσινή».
-              </div>
+              <div className={styles.empty}>{T.dashboard.seoNotRun}</div>
             )}
           </Panel>
 
           <Panel>
             <div className={styles.panelHead}>
-              <Eyebrow icon={TrendingUp}>Trending now</Eyebrow>
+              <Eyebrow icon={TrendingUp}>{T.dashboard.trendingNow}</Eyebrow>
               <Link href="/trends" className={styles.allLink}>
-                Όλα <ChevronRight size={13} />
+                {T.dashboard.all} <ChevronRight size={13} />
               </Link>
             </div>
             {trendingNow.map((t) => (
@@ -307,7 +308,7 @@ export default function Dashboard() {
               </div>
             ))}
             {trendingNow.length === 0 && (
-              <div className={styles.empty}>Κανένα trend.</div>
+              <div className={styles.empty}>{T.dashboard.noTrend}</div>
             )}
           </Panel>
         </div>
@@ -315,7 +316,7 @@ export default function Dashboard() {
 
       {breaking.length > 0 && (
         <Panel style={{ borderColor: "var(--orange-line)" }}>
-          <Eyebrow icon={Zap}>Breaking queue — live SLA</Eyebrow>
+          <Eyebrow icon={Zap}>{T.dashboard.breakingQueue}</Eyebrow>
           <div className={styles.breakingList}>
             {breaking.map((c) => (
               <div key={c.id} className={styles.breakingRow}>

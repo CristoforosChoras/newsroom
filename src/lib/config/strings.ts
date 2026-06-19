@@ -1,0 +1,350 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Centralized UI copy (el-GR).
+//
+// Every user-facing string in the app lives here so it can be reviewed in one
+// place, reused, and later translated without touching components. Static text
+// is a plain string; text with runtime values is a small function.
+//
+// Domain data that already has a dedicated config keeps it (site names →
+// sites.ts, per-page docs → pageDocs.ts, glossary → glossary.ts, SEO checks →
+// seoChecksDoc.ts, team roles → team.ts). This module is only the loose UI copy.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const T = {
+  common: {
+    network: "δίκτυο",
+    allSites: "όλα τα sites",
+    noSite: "χωρίς site",
+    createCell: "Create cell",
+    runNow: "Run now",
+    neverRun: "never run",
+    lastRun: (t: string) => `last: ${t}`,
+    chars: (n: number) => `${n} χαρακτήρες`,
+  },
+
+  agents: {
+    every: "Αυτόματα κάθε",
+    minutes: "λεπτά",
+    manualHint: "Κενό = μόνο χειροκίνητα",
+    save: "Αποθήκευση",
+    saved: "Η συχνότητα αποθηκεύτηκε",
+    saveFailed: "Αποτυχία αποθήκευσης συχνότητας",
+    runStarted: "Η λήψη ΑΠΕ-ΜΠΕ ξεκίνησε — τα άρθρα θα εμφανιστούν σε λίγα λεπτά",
+    runFailed: "Αποτυχία εκκίνησης λήψης",
+    cadenceManual: "μόνο χειροκίνητα",
+    cadenceEvery: (n: number) => `κάθε ${n}′`,
+  },
+
+  shell: {
+    brandName: "MATRIX",
+    brandSub: "NEWSROOM CORE",
+    closeMenu: "Κλείσιμο μενού",
+    networkLabel: "WORDPRESS NETWORK",
+    nav: {
+      dashboard: "Dashboard",
+      newsroom: "Newsroom",
+      trends: "Trend Radar",
+      gaps: "Content Gaps",
+      reports: "Reports",
+      agents: "Agents",
+      glossary: "Γλωσσάρι",
+    },
+    pageDocsToggle: "Πώς δουλεύει & γιατί",
+  },
+
+  topbar: {
+    openMenu: "Άνοιγμα μενού",
+    allNetwork: "Όλο το δίκτυο",
+    viewAsDev: "Προβολή ως (dev)",
+    pullAmna: "Λήψη ΑΠΕ-ΜΠΕ",
+    updateNetwork: "Ενημέρωση δικτύου",
+  },
+
+  theme: {
+    toDark: "Σκούρο θέμα",
+    toLight: "Φωτεινό θέμα",
+    switchToDark: "Εναλλαγή σε σκούρο",
+    switchToLight: "Εναλλαγή σε φωτεινό",
+  },
+
+  dashboard: {
+    networkHero: (label: string) => `WordPress δίκτυο — ${label}`,
+    portalsCount: (n: number) => `${n} portals`,
+    noGa4Short: "χωρίς GA4",
+    deltaToday: (sign: string, pct: number) => `${sign} ${pct}% σήμερα`,
+    metricsUnavailable:
+      "📊 Μετρήσεις (pageviews/SLA/top άρθρα) μη διαθέσιμες — απαιτείται σύνδεση Google Analytics (GA4). Δεν εμφανίζονται εικονικά δεδομένα.",
+    statViewsToday: "Pageviews σήμερα",
+    statViewsSub: (sign: string, pct: number) => `${sign} ${pct}% vs χθες`,
+    statSla: "Breaking SLA hit",
+    slaNone: "καμία breaking στην ουρά",
+    slaTarget: "στόχος < 2′",
+    statArticlesToday: "Άρθρα σήμερα",
+    breakingInQueue: (n: number) => `${n} breaking στην ουρά`,
+    statSitesActive: "Sites ενεργά",
+    sitesConnected: "WordPress συνδεδεμένα",
+    pageviews7d: "Pageviews — 7 ημέρες",
+    noPageviews: "Δεν υπάρχουν δεδομένα pageviews — απαιτείται GA4.",
+    topArticles: "Top άρθρα",
+    noTopArticles: "Δεν υπάρχουν άρθρα για αυτό το site σήμερα.",
+    seoYesterday: "SEO — Χθεσινή",
+    seoYesterdayShort: "Χθεσινή",
+    seoNotRun: "Δεν έχει τρέξει ακόμη — πάτησε «Χθεσινή».",
+    trendingNow: "Trending now",
+    all: "Όλα",
+    noTrend: "Κανένα trend.",
+    breakingQueue: "Breaking queue — live SLA",
+    seoLabel: { green: "Υγιές", amber: "Προσοχή", red: "Κρίσιμο" } as const,
+  },
+
+  board: {
+    newCell: "New cell",
+    pullAmna: "Λήψη ΑΠΕ-ΜΠΕ",
+    mine: "Τα δικά μου",
+    scopeHint: (scopeLabel: string) => `${scopeLabel} · drag μεταξύ σταδίων`,
+    prevStages: "Προηγούμενα στάδια",
+    nextStages: "Επόμενα στάδια",
+    empty: "Άδειο",
+  },
+
+  card: {
+    breaking: "BREAKING",
+    author: (name: string) => `Συντάκτης: ${name}`,
+    editor: (name: string) => `Επιμελητής: ${name}`,
+    returnedWithNotes: "↩ με σχόλια",
+    wp: (id: number | string) => `WP #${id}`,
+    seoTitle: (status: string, issues: number) =>
+      `SEO: ${status}${issues ? ` · ${issues} ζητήματα` : ""}`,
+  },
+
+  drawer: {
+    sourceTitle: "Πηγή / Πρωτότυπο",
+    openOriginal: "Άνοιγμα πρωτότυπου ↗",
+    originalSummary:
+      "Πρωτότυπο κείμενο · αναφορά μόνο (δημοσιεύεται το διασκευασμένο κείμενο)",
+    flow: (stage: string) => `Ροή · ${stage}`,
+    autoAssign: "Αυτόματη ανάθεση",
+    pickWriter: "Επιλογή συντάκτη…",
+    writer: (name: string) => `Συντάκτης: ${name}`,
+    openDraft: "Άνοιγμα draft",
+    belongsTo: (name: string) => `Ανήκει στον/στην ${name}.`,
+    reassign: "Επανανάθεση…",
+    editorNotes: "↩ Σχόλια επιμελητή",
+    note: (by: string, text: string) => `${by}: ${text}`,
+    editArticle: "Επεξεργασία άρθρου",
+    submitForReview: "Υποβολή για review",
+    noEditorAvailable: "Δεν υπάρχει διαθέσιμος επιμελητής (≠ συντάκτη).",
+    onlyAssigneeEdits: (name: string) =>
+      `Μόνο ο/η ${name} επεξεργάζεται & υποβάλλει.`,
+    reviewer: (name: string) => `Επιμελητής: ${name}`,
+    reviewerWithWriter: (reviewer: string, writer: string) =>
+      `Επιμελητής: ${reviewer} · συντάκτης: ${writer}`,
+    seoGate: (blocked: boolean) =>
+      `SEO gate${blocked ? " · φραγή δημοσίευσης" : " · OK"}`,
+    publishBlocked: "Φραγή: κρίσιμο SEO",
+    approveAndPublish: "Έγκριση & Δημοσίευση",
+    returnNotePlaceholder: "Σχόλιο για επιστροφή στον συντάκτη…",
+    returnWithNotes: "Επιστροφή με σχόλια",
+    onlyReviewerApproves: (name: string) =>
+      `Μόνο ο/η επιμελητής/τρια (${name}) εγκρίνει ή επιστρέφει.`,
+    published: "Δημοσιευμένο",
+    publishedPost: (id: number | string) => ` · post #${id}`,
+    promo: (social: boolean, newsletter: boolean) =>
+      `Promo: social ${social ? "✓" : "—"} · newsletter ${newsletter ? "✓" : "—"}`,
+    routing: "Routing",
+    confidence: (pct: number) => `${pct}% confidence`,
+    reroute: "Re-route with AI",
+    event: "Event",
+    eventPlaceholder: "Περιγραφή του γεγονότος…",
+    aiTitles: "AI τίτλοι (επίλεξε)",
+    metaDescription: "Meta description",
+    lsiKeywords: "LSI keywords",
+    stage: "Στάδιο",
+    none: "—",
+  },
+
+  editor: {
+    title: "Επεξεργασία άρθρου",
+    updated: "Ενημερωμένο",
+    published: "Δημοσιευμένο",
+    publishedHash: (id: number | string) => ` · #${id}`,
+    publish: (siteName?: string) =>
+      `Δημοσίευση${siteName ? ` στο ${siteName}` : ""}`,
+    publishTo: (siteName: string) => `Publish to ${siteName}`,
+    close: "Κλείσιμο",
+    fieldTitle: "Τίτλος",
+    titlePlaceholder: "Τίτλος άρθρου",
+    sitePrefixFallback: "site",
+    slugPlaceholder: "slug",
+    fieldBody: "Κείμενο",
+    linkPrompt: "URL συνδέσμου:",
+    bodyPlaceholder: "Γράψε το άρθρο εδώ…",
+    words: "Λέξεις",
+    readingTime: (min: number) => `${min}′ χρόνος ανάγνωσης`,
+    panelToggle: "Άρθρο & SEO",
+    publishSection: "Δημοσίευση",
+    category: "Κατηγορία",
+    categoryLabel: "Κατηγορία:",
+    publishedPost: (id: number | string) => `Δημοσιευμένο · post #${id}`,
+    assignSiteHint: "Ανάθεσε ένα site για δημοσίευση.",
+    excerpt: "Περίληψη",
+    excerptPlaceholder: "Σύντομη περίληψη του άρθρου…",
+    featuredImage: "Κεντρική εικόνα",
+    imageUrlPlaceholder: "https://… (URL εικόνας)",
+    noImage: "Καμία εικόνα",
+    tags: "Ετικέτες",
+    removeTag: "Αφαίρεση",
+    addTagPlaceholder: "Πρόσθεσε ετικέτα + Enter",
+    seo: "SEO",
+    seoTitleLabel: "SEO τίτλος",
+    seoTitlePlaceholder: "SEO τίτλος",
+    seoTitleCounter: (len: number) => `${len}/60 χαρακτήρες`,
+    metaDescLabel: "Meta περιγραφή",
+    metaDescPlaceholder: "Meta περιγραφή (150–160)",
+    metaDescCounter: (len: number) => `${len}/160 χαρακτήρες`,
+    tools: {
+      paragraph: "Παράγραφος",
+      h2: "Επικεφαλίδα H2",
+      h3: "Επικεφαλίδα H3",
+      bold: "Έντονα",
+      italic: "Πλάγια",
+      list: "Λίστα",
+      orderedList: "Αριθμημένη λίστα",
+      quote: "Παράθεση",
+      link: "Σύνδεσμος",
+    },
+  },
+
+  reports: {
+    tabSeo: "SEO",
+    tabKpi: "KPI",
+    seoRetroBtn: "Χθεσινή αναφορά SEO",
+    whatChecks: "Τι ελέγχει",
+    refreshKpi: "Ανανέωση KPI",
+    clear: "Καθαρισμός",
+    checksIntro1:
+      "Τι ελέγχει η Χθεσινή Αναφορά SEO σε κάθε άρθρο (ντετερμινιστικά· το LLM μόνο διατυπώνει, δεν εφευρίσκει μετρήσεις). Πλήρης τεκμηρίωση:",
+    checksDocPath: " docs/SEO-AGENT.md",
+    noReportsForDate: "Καμία αναφορά γι' αυτή την ημερομηνία",
+    noSeoReports: "Καμία αναφορά SEO ακόμη",
+    noKpiReports: "Καμία αναφορά KPI ακόμη",
+    pressSeo: "Πάτησε «Χθεσινή αναφορά SEO».",
+    pressKpi: "Πάτησε «Ανανέωση KPI».",
+    seoRetroTitle: "Χθεσινή Αναφορά SEO",
+    seoHealthTitle: "SEO Health Report",
+    kpiTitle: "KPI Report",
+    network: "δίκτυο",
+    noSiteData: "Δεν υπάρχουν δεδομένα γι' αυτό το site.",
+    colPortal: "Portal",
+    colToday: "Σήμερα",
+    colVsYesterday: "vs χθες",
+    colArticles: "Άρθρα",
+    networkRow: "Δίκτυο",
+    topArticles: "Top άρθρα",
+    auditedVolume: (audited: number, published: number) =>
+      `${audited}/${published} άρθρα ελέγχθηκαν`,
+    partnerSkipped: (n: number) => ` · ${n} partner εκτός`,
+    worstArticles: "Χειρότερα άρθρα",
+    today: "Σήμερα",
+  },
+
+  trends: {
+    intro:
+      "Ανερχόμενα θέματα σε YouTube, TikTok, Instagram, Google Trends, X — με ταχύτητα (rate-of-change), προτεινόμενο site και κατάσταση κάλυψης.",
+    scanNow: "Scan trends now",
+    deactivated: "Το Trend Radar είναι ανενεργό",
+    empty: "Κανένα trend ακόμη. Πάτησε «Scan trends now».",
+    lifecycle: {
+      emerging: "αναδύεται",
+      surging: "εκτοξεύεται",
+      peaking: "κορυφώνεται",
+      fading: "υποχωρεί",
+    },
+    coverage: {
+      gap: "κενό κάλυψης",
+      partial: "μερική κάλυψη",
+      covered: "καλύπτεται",
+    },
+  },
+
+  gaps: {
+    intro1: "Τι περιεχόμενο λείπει και έχει ζήτηση",
+    introForSite: (siteName: string) => `για ${siteName}`,
+    intro2: " — ευκαιρίες με demand signal.",
+    find: "Find content gaps",
+    deactivated: "Το Content Gaps είναι ανενεργό",
+    dismiss: "Απόρριψη",
+    crossMedia: "cross-media",
+    winnability: (pct: number) => `winnability ${pct}%`,
+    demand: "demand",
+    empty: "Καμία ευκαιρία για αυτό το site. Πάτησε «Find content gaps».",
+    type: {
+      article: "Άρθρο",
+      video: "Βίντεο",
+      post: "Post",
+    },
+    ideaType: {
+      trend: "Trend",
+      gap: "Gap",
+      both: "Trend + Gap",
+    },
+  },
+
+  // shared by the Trend Radar & Content Gaps "deactivated" panels
+  deactivatedPanel: {
+    prefix: "Ενεργοποίησέ το από τη σελίδα",
+    link: "Agents",
+    suffix: "για να ξανατρέξει.",
+  },
+
+  glossary: {
+    intro: (total: number, groups: number) =>
+      `Γλωσσάρι όρων & συντομογραφιών του MATRIX — ${total} όροι σε ${groups} κατηγορίες.`,
+    searchPlaceholder: "Αναζήτηση όρου…",
+    empty: (q: string) => `Κανένας όρος για «${q}».`,
+  },
+
+  // store toasts + defaults (flash messages and seeded labels)
+  toast: {
+    newStoryHeadline: "Νέα ιστορία",
+    publishBlockedSeo: "Δεν δημοσιεύεται: κρίσιμο SEO πρόβλημα",
+    routedTo: (siteName: string) => `Routing → ${siteName}`,
+    routeNeedsManual: "Routing: χρειάζεται χειροκίνητη ανάθεση",
+    assignSiteFirst: "Ανάθεσε πρώτα ένα site",
+    seoRetroUnavailable: "Χθεσινή αναφορά: μη διαθέσιμη (backend offline)",
+    seoRetroReady: "Χθεσινή αναφορά SEO έτοιμη",
+    kpiUnavailable: "KPI: μη διαθέσιμο (GA4 backend offline)",
+    kpiUpdated: "KPI: ενημερώθηκαν τα στοιχεία",
+    trendInactive: "Trend Radar: ανενεργό — ενεργοποίησέ το από τα Agents",
+    trendUnavailable: "Trend Radar: μη διαθέσιμο (backend offline)",
+    trendDone: "Trend Radar: scan ολοκληρώθηκε",
+    cellFromTrend: (siteName: string) => `Cell από trend → ${siteName}`,
+    cellFromTrendNeedsAssign: "Cell από trend — χρειάζεται ανάθεση",
+    gapInactive: "Content Gaps: ανενεργό — ενεργοποίησέ το από τα Agents",
+    gapUnavailable: "Content Gap: μη διαθέσιμο (Social Radar offline)",
+    gapFound: "Content Gap: ευκαιρίες βρέθηκαν",
+    cellFromGap: (siteName: string) => `Cell από ευκαιρία → ${siteName}`,
+    cellFromGapNeedsAssign: "Cell από ευκαιρία — χρειάζεται ανάθεση",
+    gapDismissed: "Ευκαιρία απορρίφθηκε",
+    gapDismissFailed: "Η απόρριψη δεν αποθηκεύτηκε",
+    amnaUnavailable: "ΑΠΕ-ΜΠΕ: μη διαθέσιμο (backend offline)",
+    amnaNoNews: "ΑΠΕ-ΜΠΕ: καμία νέα είδηση",
+    amnaSource: "ΑΠΕ-ΜΠΕ",
+    noWriterForSite: "Δεν υπάρχει διαθέσιμος συντάκτης για αυτό το site",
+    onlyAssigneeOpensDraft: "Μόνο ο ανατεθειμένος συντάκτης ανοίγει το draft",
+    onlyWriterSubmits: "Μόνο ο συντάκτης υποβάλλει για review",
+    needDifferentEditor: "Χρειάζεται επιμελητής διαφορετικός από τον συντάκτη",
+    onlyReviewerReturns: "Μόνο ο επιμελητής επιστρέφει το άρθρο",
+    needReturnNote: "Χρειάζεται σχόλιο για την επιστροφή",
+    returnedToWriter: "Επιστράφηκε στον συντάκτη με σχόλια",
+    onlyReviewerApproves: "Μόνο ο επιμελητής εγκρίνει & δημοσιεύει",
+    publishedWithPromo: "Δημοσιεύτηκε + αυτόματο social/newsletter promo ✓",
+    networkUpdating: "Ενημέρωση δικτύου…",
+    networkUpdated: "Ενημέρωση δικτύου ολοκληρώθηκε",
+  },
+
+  routing: {
+    noClearVertical:
+      "Δεν εντοπίστηκε καθαρό vertical — προτείνεται χειροκίνητη επιβεβαίωση.",
+  },
+} as const;

@@ -1,4 +1,5 @@
 import { siteById } from "@/lib/config/sites";
+import { T } from "@/lib/config/strings";
 import styles from "./SiteTag.module.css";
 
 interface SiteTagProps {
@@ -9,7 +10,7 @@ interface SiteTagProps {
 export default function SiteTag({ id, small }: SiteTagProps) {
   const s = siteById(id);
   if (!s) {
-    return <span className={styles.none}>χωρίς site</span>;
+    return <span className={styles.none}>{T.common.noSite}</span>;
   }
   return (
     <span
