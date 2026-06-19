@@ -60,6 +60,7 @@ interface Actions {
   setBoardKind: (kind: CellKind) => void;
   setKpiWindow: (w: string) => void;
   addCell: () => string;
+  removeCell: (id: string) => void;
   move: (id: string, status: Stage) => void;
   updateCell: (id: string, patch: Partial<Cell>) => void;
   reroute: (id: string) => Promise<void>;
@@ -242,6 +243,16 @@ export const useNewsroom = create<Store>()(
         });
         set((s) => ({ cells: [c, ...s.cells], open: id }));
         return id;
+      },
+
+      // Delete a single cell from the board (closes the drawer/editor if open).
+      removeCell: (id) => {
+        set((s) => ({
+          cells: s.cells.filter((c) => c.id !== id),
+          open: s.open === id ? null : s.open,
+          editing: s.editing === id ? null : s.editing,
+        }));
+        get().flash("Η κάρτα διαγράφηκε");
       },
 
       // Manual stage move (drag / stage chips) — lead override. Named role actions

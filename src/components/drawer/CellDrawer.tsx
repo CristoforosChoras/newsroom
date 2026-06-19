@@ -16,6 +16,7 @@ import {
   Shuffle,
   Sparkles,
   Tag as TagIcon,
+  Trash2,
   UserPlus,
   Undo2,
   X,
@@ -40,6 +41,7 @@ export default function CellDrawer() {
   const open = useNewsroom((s) => s.open);
   const cell = useNewsroom((s) => s.cells.find((c) => c.id === open));
   const closeCell = useNewsroom((s) => s.closeCell);
+  const removeCell = useNewsroom((s) => s.removeCell);
   const updateCell = useNewsroom((s) => s.updateCell);
   const reroute = useNewsroom((s) => s.reroute);
   const move = useNewsroom((s) => s.move);
@@ -64,6 +66,10 @@ export default function CellDrawer() {
   if (!cell) return null;
   const c = cell;
 
+  const del = () => {
+    if (window.confirm(T.drawer.confirmDelete)) removeCell(c.id);
+  };
+
   // ── Social cell: a lighter, SEO-gate-free drawer with its own pipeline ──
   if (c.kind === "social") {
     const PLATFORMS = ["instagram", "tiktok", "facebook", "x", "youtube", "reel", "linkedin"];
@@ -83,6 +89,9 @@ export default function CellDrawer() {
           <div className={styles.head}>
             <SiteTag id={c.site} />
             {c.platform && <span className={styles.breaking}>{c.platform}</span>}
+            <button className={styles.del} title={T.drawer.delete} onClick={del}>
+              <Trash2 size={15} />
+            </button>
             <X
               size={20}
               color="var(--dim)"
@@ -300,6 +309,9 @@ export default function CellDrawer() {
           {c.urgency === "breaking" && (
             <span className={styles.breaking}>{T.card.breaking}</span>
           )}
+          <button className={styles.del} title={T.drawer.delete} onClick={del}>
+            <Trash2 size={15} />
+          </button>
           <X
             size={20}
             color="var(--dim)"
