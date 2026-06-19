@@ -14,10 +14,16 @@ export const USERS: User[] = [
   { id: "w_auto", name: "Μ. Παππά", role: "writer", sites: ["onlyauto"] },
   { id: "w_life_1", name: "Σ. Λέκκα", role: "writer", sites: ["muse", "klik"] },
   { id: "w_life_2", name: "Α. Ρόδη", role: "writer", sites: ["exodos", "klik", "muse"] },
+  { id: "w_pol_1", name: "Ν. Οικονόμου", role: "writer", sites: ["popaganda"] },
+  { id: "w_pol_2", name: "Β. Σταθοπούλου", role: "writer", sites: ["popaganda"] },
 
   // Editors (reviewers) — kept distinct from writers
   { id: "e_sports", name: "Δ. Αντωνίου", role: "editor", sites: ["sportal", "outsidersbet"] },
   { id: "e_life", name: "Ε. Βλάχου", role: "editor", sites: ["muse", "klik", "exodos"] },
+  // Politics / Popaganda desk editors
+  { id: "e_pol_1", name: "Φ. Καρράς", role: "editor", sites: ["popaganda"] },
+  { id: "e_pol_2", name: "Ι. Μαυρίδου", role: "editor", sites: ["popaganda"] },
+  { id: "e_pol_3", name: "Χ. Δούκας", role: "editor", sites: ["popaganda", "klik"] },
   { id: "e_general", name: "Θ. Σιδέρης", role: "editor", sites: ["*"] },
 ];
 

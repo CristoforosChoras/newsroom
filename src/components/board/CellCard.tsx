@@ -1,7 +1,8 @@
 "use client";
 
-import { Globe, RefreshCw, TrendingUp } from "lucide-react";
+import { Globe, RefreshCw, TrendingUp, Trash2 } from "lucide-react";
 import type { Cell } from "@/lib/types";
+import { useNewsroom } from "@/lib/store/useNewsroom";
 import { evaluateGate } from "@/lib/services/seoGate";
 import { siteById } from "@/lib/config/sites";
 import { userById, initials } from "@/lib/config/team";
@@ -19,6 +20,8 @@ interface CellCardProps {
 }
 
 export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProps) {
+  const removeCell = useNewsroom((s) => s.removeCell);
+  const askConfirm = useNewsroom((s) => s.askConfirm);
   const busy = c._routing || c._drafting || c._publishing;
   const isSocial = c.kind === "social";
   // cells spawned from a Trend Radar trend are marked (distinct accent + badge)
@@ -44,6 +47,24 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
       onDragStart={onDragStart}
       onClick={onClick}
     >
+      <button
+        className={styles.delBtn}
+        title={T.drawer.delete}
+        draggable={false}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          askConfirm({
+            title: T.drawer.delete,
+            message: T.drawer.confirmDelete,
+            confirmLabel: T.drawer.deleteConfirm,
+            danger: true,
+            onConfirm: () => removeCell(c.id),
+          });
+        }}
+      >
+        <Trash2 size={13} />
+      </button>
       <div className={styles.head}>
         <SiteTag id={c.site} small />
         {fromTrend && (

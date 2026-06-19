@@ -42,6 +42,7 @@ export default function CellDrawer() {
   const cell = useNewsroom((s) => s.cells.find((c) => c.id === open));
   const closeCell = useNewsroom((s) => s.closeCell);
   const removeCell = useNewsroom((s) => s.removeCell);
+  const askConfirm = useNewsroom((s) => s.askConfirm);
   const updateCell = useNewsroom((s) => s.updateCell);
   const reroute = useNewsroom((s) => s.reroute);
   const move = useNewsroom((s) => s.move);
@@ -67,7 +68,13 @@ export default function CellDrawer() {
   const c = cell;
 
   const del = () => {
-    if (window.confirm(T.drawer.confirmDelete)) removeCell(c.id);
+    askConfirm({
+      title: T.drawer.delete,
+      message: T.drawer.confirmDelete,
+      confirmLabel: T.drawer.deleteConfirm,
+      danger: true,
+      onConfirm: () => removeCell(c.id),
+    });
   };
 
   // ── Social cell: a lighter, SEO-gate-free drawer with its own pipeline ──

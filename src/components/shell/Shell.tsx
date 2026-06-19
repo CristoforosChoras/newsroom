@@ -7,6 +7,7 @@ import Topbar from "./Topbar";
 import PageDocs from "./PageDocs";
 import StoreHydration from "./StoreHydration";
 import Toast from "@/components/ui/Toast";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import CellDrawer from "@/components/drawer/CellDrawer";
 import ArticleEditor from "@/components/editor/ArticleEditor";
 import TrendIdea from "@/components/trends/TrendIdea";
@@ -16,6 +17,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const open = useNewsroom((s) => s.open);
   const editing = useNewsroom((s) => s.editing);
   const trendIdea = useNewsroom((s) => s.trendIdea);
+  const confirm = useNewsroom((s) => s.confirm);
+  const closeConfirm = useNewsroom((s) => s.closeConfirm);
   const [navOpen, setNavOpen] = useState(false);
 
   // Close the mobile nav slide-over when the viewport grows to desktop.
@@ -42,6 +45,18 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {open && <CellDrawer />}
       {editing && <ArticleEditor />}
       {trendIdea && <TrendIdea />}
+      <ConfirmDialog
+        open={!!confirm}
+        message={confirm?.message ?? ""}
+        title={confirm?.title}
+        confirmLabel={confirm?.confirmLabel}
+        danger={confirm?.danger}
+        onCancel={closeConfirm}
+        onConfirm={() => {
+          confirm?.onConfirm();
+          closeConfirm();
+        }}
+      />
       <Toast />
       <StoreHydration />
     </div>

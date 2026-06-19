@@ -36,10 +36,22 @@ import {
   getRadarTrends as getRadarTrendsSvc,
 } from "@/lib/services/agents";
 
+// A pending confirmation (drives the ConfirmDialog primitive). Holds a callback,
+// so it lives in UI state only (never persisted).
+export interface ConfirmRequest {
+  message: string;
+  title?: string;
+  confirmLabel?: string;
+  danger?: boolean;
+  onConfirm: () => void;
+}
+
 interface UiState {
   open: string | null; // cell id shown in the drawer
   editing: string | null; // cell id shown in the full-screen article editor
   toast: string | null;
+  confirm: ConfirmRequest | null; // active confirmation dialog
+
   kpiWindow: string; // active KPI window ("today" | "7d" | "28d")
   boardKind: CellKind; // active newsroom board tab (article | social)
   // Trend Radar
@@ -123,6 +135,8 @@ interface Actions {
   morning: () => Promise<void>;
   openCell: (id: string) => void;
   closeCell: () => void;
+  askConfirm: (req: ConfirmRequest) => void;
+  closeConfirm: () => void;
   openEditor: (id: string) => void;
   closeEditor: () => void;
   clearReports: () => void;
@@ -159,6 +173,7 @@ export const useNewsroom = create<Store>()(
       open: null,
       editing: null,
       toast: null,
+      confirm: null,
       kpiWindow: "7d",
       boardKind: "article",
       trendScope: "greece",
@@ -196,6 +211,8 @@ export const useNewsroom = create<Store>()(
 
       openCell: (id) => set({ open: id }),
       closeCell: () => set({ open: null }),
+      askConfirm: (req) => set({ confirm: req }),
+      closeConfirm: () => set({ confirm: null }),
       clearReports: () => set({ reports: [] }),
 
       // Normalize editor fields from existing cell data (fill empties only),
