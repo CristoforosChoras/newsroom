@@ -208,6 +208,8 @@ export const T = {
     editorNotes: "↩ Σχόλια επιμελητή",
     note: (by: string, text: string) => `${by}: ${text}`,
     editArticle: "Επεξεργασία άρθρου",
+    aiGenerate: "Δημιουργία με AI",
+    aiTitlesEmpty: "Πάτησε «Δημιουργία με AI» για τίτλους, meta & keywords.",
     submitForReview: "Υποβολή για review",
     noEditorAvailable: "Δεν υπάρχει διαθέσιμος επιμελητής (≠ συντάκτη).",
     onlyAssigneeEdits: (name: string) =>

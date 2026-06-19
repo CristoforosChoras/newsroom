@@ -603,7 +603,18 @@ export default function CellDrawer() {
             the same options (titles / meta / keywords); empty states until a
             draft is generated or the article editor fills them. */}
         <div className={styles.draft}>
-          <Eyebrow icon={FileText}>AI τίτλοι (επίλεξε)</Eyebrow>
+          <div className={styles.draftHead}>
+            <Eyebrow icon={FileText}>AI τίτλοι (επίλεξε)</Eyebrow>
+            <Button
+              small
+              variant="soft"
+              icon={Sparkles}
+              loading={c._drafting}
+              onClick={() => void generateDraft(c.id)}
+            >
+              {T.drawer.aiGenerate}
+            </Button>
+          </div>
           {c.titles.length > 0 ? (
             c.titles.map((t, i) => {
               const selected = c.headline === t;
@@ -633,10 +644,7 @@ export default function CellDrawer() {
               );
             })
           ) : (
-            <div className={styles.draftEmpty}>
-              Δεν υπάρχουν AI τίτλοι ακόμη — δημιούργησε draft ή πρόσθεσε από την
-              «Επεξεργασία άρθρου».
-            </div>
+            <div className={styles.draftEmpty}>{T.drawer.aiTitlesEmpty}</div>
           )}
 
           <Eyebrow icon={Search}>Meta description</Eyebrow>
