@@ -3,6 +3,7 @@
 import { Globe, RefreshCw, TrendingUp } from "lucide-react";
 import type { Cell } from "@/lib/types";
 import { evaluateGate } from "@/lib/services/seoGate";
+import { siteById } from "@/lib/config/sites";
 import { userById, initials } from "@/lib/config/team";
 import { dateTimeShort } from "@/lib/utils/time";
 import { T } from "@/lib/config/strings";
@@ -26,6 +27,14 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
   // cells have no SEO gate).
   const showGate = !isSocial && (c.status === "ai_draft" || c.status === "review");
   const gate = showGate ? evaluateGate(c) : null;
+  // card preview meta
+  const category = c.category || siteById(c.site)?.wpCat || "";
+  const urgencyColor =
+    c.urgency === "breaking"
+      ? "var(--red)"
+      : c.urgency === "evergreen"
+        ? "var(--green)"
+        : "var(--dim)";
   return (
     <div
       className={[styles.card, fromTrend ? styles.fromTrend : ""]
@@ -61,6 +70,20 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
         )}
       </div>
       <div className={styles.headline}>{c.headline}</div>
+
+      {/* preview meta: type · category · priority */}
+      <div className={styles.metaRow}>
+        <span className={styles.metaChip}>
+          {isSocial ? T.card.typeSocial : T.card.typeArticle}
+        </span>
+        {category && <span className={styles.metaChip}>{category}</span>}
+        {c.urgency !== "breaking" && (
+          <span className={styles.metaChip} style={{ color: urgencyColor }}>
+            {T.card.priority[c.urgency]}
+          </span>
+        )}
+      </div>
+
       {(c.assignee || c.reviewer || c.returnedFromReview || c.aiVersion > 0) && (
         <div className={styles.people}>
           {c.assignee && (
@@ -77,6 +100,11 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
               title={T.card.editor(userById(c.reviewer)?.name ?? c.reviewer)}
             >
               {initials(userById(c.reviewer)?.name ?? "?")}
+            </span>
+          )}
+          {c.reviewer && (
+            <span className={styles.editorName}>
+              {T.card.editorShort(userById(c.reviewer)?.name ?? c.reviewer)}
             </span>
           )}
           {c.aiVersion > 0 && <span className={styles.vbadge}>v{c.aiVersion}</span>}

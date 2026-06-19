@@ -187,6 +187,14 @@ export const T = {
     breaking: "BREAKING",
     author: (name: string) => `Συντάκτης: ${name}`,
     editor: (name: string) => `Επιμελητής: ${name}`,
+    editorShort: (name: string) => `Επιμ: ${name}`,
+    typeArticle: "Άρθρο",
+    typeSocial: "Social",
+    priority: {
+      breaking: "Επείγον",
+      standard: "Κανονικό",
+      evergreen: "Διαχρονικό",
+    } as Record<string, string>,
     returnedWithNotes: "↩ με σχόλια",
     wp: (id: number | string) => `WP #${id}`,
     seoTitle: (status: string, issues: number) =>

@@ -71,7 +71,32 @@
   font-size: 13px;
   font-weight: 600;
   line-height: 1.35;
-  margin-bottom: 9px;
+  margin-bottom: 8px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.metaChip {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--dim);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+
+.editorName {
+  font-size: 10px;
+  color: var(--blue);
 }
 
 .sla {

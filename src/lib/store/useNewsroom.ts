@@ -248,9 +248,16 @@ export const useNewsroom = create<Store>()(
       // (submit/sendBack/approve) carry the real guards; the publish gate still
       // blocks a manual move into Published.
       move: (id, status) => {
+        const cell = get().cells.find((x) => x.id === id);
+        if (!cell || status === cell.status) return;
+        // Article cells must be assigned before they can change lane (social cells
+        // have no assignee and move freely through their own pipeline).
+        if ((cell.kind ?? "article") !== "social" && !cell.assignee) {
+          get().flash("Ανάθεσε πρώτα συντάκτη για αλλαγή σταδίου");
+          return;
+        }
         if (status === "published") {
-          const c = get().cells.find((x) => x.id === id);
-          if (c && !canPublish(c)) {
+          if (!canPublish(cell)) {
             get().flash("Δεν δημοσιεύεται: κρίσιμο SEO πρόβλημα");
             return;
           }
