@@ -1,0 +1,106 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+  outline: none;
+}
+
+.bubble {
+  position: absolute;
+  z-index: 100;
+  width: max-content;
+  max-width: 260px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  /* reset any inherited badge text styling */
+  font-family: var(--font-sans, inherit);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  /* fade only — no transform animation (a sliding layer can repaint over
+     neighbouring boxes); static position avoids that glitch entirely */
+  transition:
+    opacity 0.14s ease,
+    visibility 0.14s ease;
+  pointer-events: none;
+}
+
+/* reveal on hover or keyboard focus */
+.wrap:hover .bubble,
+.wrap:focus-visible .bubble,
+.wrap:focus-within .bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── placements (static, no slide) ── */
+.bubble[data-placement="top"] {
+  bottom: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.bubble[data-placement="bottom"] {
+  top: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.bubble[data-placement="left"] {
+  right: calc(100% + 9px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.bubble[data-placement="right"] {
+  left: calc(100% + 9px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ── arrow ── */
+.bubble::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+.bubble[data-placement="top"]::after {
+  bottom: -5px;
+  left: 50%;
+  margin-left: -4px;
+  border-top: none;
+  border-left: none;
+}
+.bubble[data-placement="bottom"]::after {
+  top: -5px;
+  left: 50%;
+  margin-left: -4px;
+  border-bottom: none;
+  border-right: none;
+}
+.bubble[data-placement="left"]::after {
+  right: -5px;
+  top: 50%;
+  margin-top: -4px;
+  border-bottom: none;
+  border-left: none;
+}
+.bubble[data-placement="right"]::after {
+  left: -5px;
+  top: 50%;
+  margin-top: -4px;
+  border-top: none;
+  border-right: none;
+}

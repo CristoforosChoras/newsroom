@@ -18,7 +18,7 @@ import {
   Area,
   AreaChart,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as ChartTooltip,
   XAxis,
 } from "recharts";
 import { SITES, VERTICALS, siteById } from "@/lib/config/sites";
@@ -33,6 +33,7 @@ import Button from "@/components/ui/Button";
 import SiteTag from "@/components/ui/SiteTag";
 import StatusLight from "@/components/ui/StatusLight";
 import SlaClock from "@/components/ui/SlaClock";
+import Tooltip from "@/components/ui/Tooltip";
 import styles from "./Dashboard.module.css";
 
 const SEO_LABEL = T.dashboard.seoLabel;
@@ -220,15 +221,19 @@ export default function Dashboard() {
             </div>
             <div className={styles.freshness}>
               {finality && (
-                <span
-                  className={[
-                    styles.finBadge,
-                    finality === "final" ? styles.finFinal : styles.finPrelim,
-                  ].join(" ")}
-                  title={finality === "final" ? T.kpi.finalHelp : T.kpi.prelimHelp}
+                <Tooltip
+                  content={finality === "final" ? T.kpi.finalHelp : T.kpi.prelimHelp}
+                  placement="bottom"
                 >
-                  {finality === "final" ? T.kpi.final : T.kpi.preliminary}
-                </span>
+                  <span
+                    className={[
+                      styles.finBadge,
+                      finality === "final" ? styles.finFinal : styles.finPrelim,
+                    ].join(" ")}
+                  >
+                    {finality === "final" ? T.kpi.final : T.kpi.preliminary}
+                  </span>
+                </Tooltip>
               )}
               {kpiMeta?.lastUpdated ? (
                 <span className={styles.updated}>
@@ -282,7 +287,7 @@ export default function Dashboard() {
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Tooltip
+                  <ChartTooltip
                     contentStyle={{
                       background: "var(--panel)",
                       border: "1px solid var(--line)",

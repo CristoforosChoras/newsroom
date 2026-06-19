@@ -10,7 +10,7 @@ interface StatProps {
 
 export default function Stat({ label, value, sub, subColor }: StatProps) {
   return (
-    <Panel pad={16} className={styles.stat}>
+    <Panel pad={11} className={styles.stat}>
       <div className={styles.label}>{label}</div>
       <div className={styles.value}>{value}</div>
       {sub && (

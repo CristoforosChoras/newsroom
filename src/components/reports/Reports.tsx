@@ -24,6 +24,7 @@ import Panel from "@/components/ui/Panel";
 import Button from "@/components/ui/Button";
 import SiteTag from "@/components/ui/SiteTag";
 import StatusLight from "@/components/ui/StatusLight";
+import Tooltip from "@/components/ui/Tooltip";
 import styles from "./Reports.module.css";
 
 type Tab = "seo" | "kpi";
@@ -86,9 +87,9 @@ function KpiReport({ r, scope }: { r: Report; scope: string }) {
     <>
       <div className={styles.kpiCaption}>
         {T.kpi.windows["7d"]} ·{" "}
-        <span className={styles.prelimTag} title={T.kpi.prelimHelp}>
-          {T.kpi.preliminary}
-        </span>
+        <Tooltip content={T.kpi.prelimHelp} placement="bottom">
+          <span className={styles.prelimTag}>{T.kpi.preliminary}</span>
+        </Tooltip>
       </div>
       <table className={styles.kpiTable}>
         <thead>
@@ -124,8 +125,8 @@ function KpiReport({ r, scope }: { r: Report; scope: string }) {
           <tfoot>
             <tr>
               <td>{T.reports.networkRow}</td>
-              <td className={styles.num} title={T.kpi.approxUsers}>
-                ≈ {fmtViews(totalUsers)}
+              <td className={styles.num}>
+                <Tooltip content={T.kpi.approxUsers}>≈ {fmtViews(totalUsers)}</Tooltip>
               </td>
               <td className={styles.num}>{fmtViews(totalSessions)}</td>
               <td className={styles.num}>{fmtViews(totalViews)}</td>

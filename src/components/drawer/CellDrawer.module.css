@@ -202,6 +202,12 @@
   margin-top: 26px;
 }
 
+.draftEmpty {
+  font-size: 12px;
+  color: var(--faint);
+  padding: 4px 0 10px;
+}
+
 .titleOpt {
   padding: 10px 12px;
   background: var(--panel-2);

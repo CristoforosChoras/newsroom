@@ -599,10 +599,13 @@ export default function CellDrawer() {
           </Button>
         </div>
 
-        {c.titles.length > 0 && (
-          <div className={styles.draft}>
-            <Eyebrow icon={FileText}>AI τίτλοι (επίλεξε)</Eyebrow>
-            {c.titles.map((t, i) => {
+        {/* SEO draft block — ALWAYS shown for article cells so every card exposes
+            the same options (titles / meta / keywords); empty states until a
+            draft is generated or the article editor fills them. */}
+        <div className={styles.draft}>
+          <Eyebrow icon={FileText}>AI τίτλοι (επίλεξε)</Eyebrow>
+          {c.titles.length > 0 ? (
+            c.titles.map((t, i) => {
               const selected = c.headline === t;
               return (
                 <div
@@ -628,13 +631,26 @@ export default function CellDrawer() {
                   {t}
                 </div>
               );
-            })}
+            })
+          ) : (
+            <div className={styles.draftEmpty}>
+              Δεν υπάρχουν AI τίτλοι ακόμη — δημιούργησε draft ή πρόσθεσε από την
+              «Επεξεργασία άρθρου».
+            </div>
+          )}
 
-            <Eyebrow icon={Search}>Meta description</Eyebrow>
-            <div className={styles.metaBox}>{c.meta}</div>
-            <div className={styles.charCount}>{c.meta.length} χαρακτήρες</div>
+          <Eyebrow icon={Search}>Meta description</Eyebrow>
+          {c.meta ? (
+            <>
+              <div className={styles.metaBox}>{c.meta}</div>
+              <div className={styles.charCount}>{c.meta.length} χαρακτήρες</div>
+            </>
+          ) : (
+            <div className={styles.draftEmpty}>—</div>
+          )}
 
-            <Eyebrow icon={TagIcon}>LSI keywords</Eyebrow>
+          <Eyebrow icon={TagIcon}>LSI keywords</Eyebrow>
+          {c.keywords.length > 0 ? (
             <div className={styles.keywords}>
               {c.keywords.map((k, i) => (
                 <span key={i} className={styles.keyword}>
@@ -642,8 +658,10 @@ export default function CellDrawer() {
                 </span>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className={styles.draftEmpty}>—</div>
+          )}
+        </div>
 
 
         {/* stage */}
