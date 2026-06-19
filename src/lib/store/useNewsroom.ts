@@ -4,6 +4,8 @@ import type {
   Agent,
   Cell,
   CellKind,
+  CompetitionFinding,
+  CompetitionRun,
   Gap,
   IdeaState,
   NewsroomState,
@@ -34,6 +36,10 @@ import {
   runAmnaIngest as runAmnaIngestSvc,
   getKpi as getKpiSvc,
   getRadarTrends as getRadarTrendsSvc,
+  startCompetition as startCompetitionSvc,
+  getCompetitionRun as getCompetitionRunSvc,
+  listCompetitionRuns as listCompetitionRunsSvc,
+  type ScoutOpts,
 } from "@/lib/services/agents";
 
 // A pending confirmation (drives the ConfirmDialog primitive). Holds a callback,
@@ -65,6 +71,11 @@ interface UiState {
   trendResearch: Record<string, TrendResearch>;
   trendBrands: Record<string, string[]>; // remembered brand selection per trend
   usedTrends: string[]; // trend ids that produced a cell → marked (NOT removed) in the feed
+  // Competition Analysis (session-only; runs also live server-side and reload via list)
+  competitionRuns: Record<string, CompetitionRun>;
+  competitionFindings: Record<string, CompetitionFinding[]>; // by runId
+  activeCompetitionRunId: string | null;
+  competitionDetail: { runId: string; findingId: string } | null; // open detail modal
 }
 
 interface Actions {
@@ -92,6 +103,12 @@ interface Actions {
   cacheTrendResearch: (trendId: string, research: TrendResearch) => void;
   setTrendBrands: (trendId: string, ids: string[]) => void;
   markTrendUsed: (trendId: string) => void;
+  // Competition Analysis
+  startCompetitionRun: (opts: ScoutOpts) => Promise<string | null>;
+  pollCompetition: (runId: string) => Promise<void>;
+  loadCompetitionRuns: () => Promise<void>;
+  openCompetitionDetail: (runId: string, findingId: string) => void;
+  closeCompetitionDetail: () => void;
   // Per-idea "Create cell" from the Trend Radar modal (routes to the right board)
   createSocialCell: (o: {
     platform: string;
@@ -183,6 +200,10 @@ export const useNewsroom = create<Store>()(
       trendResearch: {},
       trendBrands: {},
       usedTrends: [],
+      competitionRuns: {},
+      competitionFindings: {},
+      activeCompetitionRunId: null,
+      competitionDetail: null,
 
       setScope: (scope) => set({ scope }),
       setBoardKind: (kind) => set({ boardKind: kind }),
@@ -202,6 +223,58 @@ export const useNewsroom = create<Store>()(
             ? {}
             : { usedTrends: [...s.usedTrends, trendId] },
         ),
+
+      // ── Competition Analysis ──
+      startCompetitionRun: async (opts) => {
+        const runId = await startCompetitionSvc(opts);
+        if (!runId) {
+          get().flash("Competition: μη διαθέσιμο (Social Radar offline)");
+          return null;
+        }
+        const stub: CompetitionRun = {
+          id: runId,
+          status: "pending",
+          urls: opts.urls,
+          socials: opts.socials ?? [],
+          windowHours: opts.windowHours ?? 60,
+          profileIds: opts.profileIds ?? [],
+          progress: { phase: "queued", done: 0, total: opts.urls.length },
+          sources: [],
+          competitorSummaries: [],
+          socialStatus: "unavailable",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        set((s) => ({
+          competitionRuns: { ...s.competitionRuns, [runId]: stub },
+          activeCompetitionRunId: runId,
+        }));
+        get().flash("Competition: η ανάλυση ξεκίνησε…");
+        return runId;
+      },
+
+      pollCompetition: async (runId) => {
+        const res = await getCompetitionRunSvc(runId);
+        if (!res) return;
+        set((s) => ({
+          competitionRuns: { ...s.competitionRuns, [runId]: res.run },
+          competitionFindings: { ...s.competitionFindings, [runId]: res.findings },
+        }));
+      },
+
+      loadCompetitionRuns: async () => {
+        const runs = await listCompetitionRunsSvc();
+        if (!runs) return;
+        set((s) => {
+          const map = { ...s.competitionRuns };
+          for (const r of runs) map[r.id] = r;
+          return { competitionRuns: map };
+        });
+      },
+
+      openCompetitionDetail: (runId, findingId) =>
+        set({ competitionDetail: { runId, findingId } }),
+      closeCompetitionDetail: () => set({ competitionDetail: null }),
 
       flash: (msg) => {
         set({ toast: msg });

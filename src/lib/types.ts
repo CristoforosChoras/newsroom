@@ -423,3 +423,58 @@ export interface TrendResearch {
   sources: { title: string; url: string }[];
   researchedAt: number;
 }
+
+// ── Competition Analysis (on-demand competitor scout) ──
+export type CompetitionRunStatus = "pending" | "running" | "done" | "error";
+export type CompetitionFindingType = "missed" | "behind";
+
+export interface CompetitionSourceStatus {
+  url: string;
+  ok: boolean;
+  reason?: string;
+  count: number;
+}
+
+export interface CompetitorSummary {
+  url: string;
+  articleCount: number;
+  cadencePerDay: number;
+  topTopics: string[];
+}
+
+export interface CompetitionFinding {
+  id: string;
+  runId: string;
+  type: CompetitionFindingType; // missed | behind
+  topic: string;
+  headline: string;
+  whyItMatters: string;
+  competitors: { url: string; title: string; publishedAt: number | null }[];
+  metrics: { competitorCount: number; earliestPublishedAt: number | null; engagement?: number | null };
+  profileFit: string[]; // brand site ids
+  score: number;
+}
+
+export interface CompetitionRun {
+  id: string;
+  status: CompetitionRunStatus;
+  urls: string[];
+  socials: string[];
+  windowHours: number;
+  profileIds: string[];
+  progress: { phase: string; done: number; total: number };
+  sources: CompetitionSourceStatus[];
+  competitorSummaries: CompetitorSummary[];
+  socialStatus: "unavailable" | "ok";
+  error?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface CompetitionDraft {
+  id: string;
+  findingId: string;
+  profileId: string;
+  ideas: GeneratedIdeas;
+  createdAt: number;
+}

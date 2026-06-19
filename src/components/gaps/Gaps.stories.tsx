@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import Gaps from "./Gaps";
 import { withStore } from "../../../.storybook/fixtures";
 
-/** Content Gaps: demand-with-weak-coverage opportunities, each with winnability and a create-cell action. */
+/** Competition Analysis: paste competitor URLs → async scout → ranked Missed/Behind findings + suggested angle. */
 const meta = {
-  title: "Views/Gaps",
+  title: "Views/Competition",
   component: Gaps,
   parameters: { layout: "fullscreen" },
   decorators: [withStore()],
