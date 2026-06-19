@@ -149,6 +149,18 @@
   padding: 2px 0;
 }
 
+.bodyLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bodyLabelRow .fieldLabel {
+  margin-bottom: 0;
+}
+
 /* toolbar */
 .toolbar {
   display: flex;
@@ -183,7 +195,12 @@
 
 /* content editable */
 .content {
-  flex: 1;
+  /* grow to fill empty space, but never shrink below the text's own height
+     (flex-basis auto) — otherwise long articles spill out and the stats footer
+     overlaps them. The main column (.main) scrolls. */
+  flex: 1 0 auto;
+  min-width: 0;
+  max-width: 100%;
   min-height: 320px;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -193,6 +210,18 @@
   font-size: 15px;
   line-height: 1.7;
   color: var(--text);
+  /* wrap long words / URLs from wire copy so text never spills outside the box */
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* keep any embedded media/wide content inside the editor */
+.content img,
+.content video,
+.content table,
+.content pre {
+  max-width: 100%;
+  height: auto;
 }
 
 .content:empty::before {
@@ -234,6 +263,7 @@
 .content a {
   color: var(--orange);
   text-decoration: underline;
+  word-break: break-all;
 }
 
 .statsFooter {

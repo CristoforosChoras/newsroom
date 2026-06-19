@@ -17,17 +17,33 @@ which keeps SSR output deterministic.
 - **`NewsroomState`** — `scope`, `currentUser`, `cells`, `trends`, `gaps`,
   `reports`, `agents`, `siteKpi`, `seo`, `network`. All collections start empty
   and fill only from real backends.
-- **`UiState`** — `open` (cell id shown in the drawer), `editing` (cell id in the
-  full-screen editor), `toast` (transient message).
+- **`UiState`** — `open` (drawer cell id), `editing` (editor cell id), `toast`,
+  **`boardKind`** (`"article" | "social"` — which Newsroom board is shown),
+  `trendScope` (`greece | global`), `radarTrends` (loaded feed), `trendIdea`
+  (trend id in the idea modal), and the **per-trend caches** `trendDrafts` /
+  `trendResearch` / `trendBrands` (in-memory only, survive navigation, not persisted).
+
+> **Cell.kind** — each cell is `"article"` (default / missing) or `"social"`. The
+> two Newsroom boards filter by `kind` and render `columnsFor(kind)`; social cells
+> carry `platform`/`caption`/`hashtags`/`scheduledAt`. See
+> [NEWSROOM.md](https://github.com/CristoforosChoras/newsroom/blob/main/docs/NEWSROOM.md).
 
 ## Actions
 
 ### Board & cells
-- **`addCell()`** → creates a blank cell in `inbox`, returns its id.
-- **`move(id, status)`** — manual stage change (drag / chips). This is the
-  lead-style override path and bypasses role guards.
-- **`updateCell(id, patch)`** — patch any cell fields (used by the editor).
+- **`addCell()`** → creates a blank cell of the current `boardKind` (article →
+  `inbox`, social → `idea`), returns its id.
+- **`move(id, status)`** — manual stage change (drag / chips), any `Stage`. Lead-style
+  override; bypasses role guards. The publish gate still blocks article → `published`.
+- **`setBoardKind(kind)`** — switch the Newsroom board (Άρθρα ⇄ Social).
+- **`updateCell(id, patch)`** — patch any cell fields (used by the editor + social drawer).
 - **`reroute(id)`** — AI re-route via the router service; updates `site`/`confidence`.
+
+### Social board (gate-free pipeline)
+- **`composeSocial` / `submitSocialForApproval` / `approveSocialSchedule(id, whenMs)` /
+  `returnSocial` / `postSocial`** — move a social cell through
+  Ιδέες → Σύνταξη → Έγκριση → Προγραμματισμένα → Δημοσιευμένα. `postSocial` calls the
+  `publishToSocial` stub. No SEO gate.
 
 ### Two-person editorial flow (role-guarded by `currentUser`)
 - **`assign(id, writerId?)`** — assign to a writer (round-robin if omitted);
@@ -47,11 +63,21 @@ which keeps SSR output deterministic.
 - **`scanTrends()` / `findGaps(scope)`** — fetch Social Radar ideas → `trends` / `gaps`.
 - **`createCellFromTrend(trend)` / `createCellFromGap(gap)`** — spawn a cell from an idea (returns id).
 - **`dismissGap(id)`** — suppress a gap (writes idea state back).
-- **`pullInbox()`** — pull ingested AMNA wire cells, dedupe by `originalId`,
-  prepend new ones; returns the count added.
+- **`pullInbox()`** — **crawls AMNA live first** (awaits the n8n Kick), then reads the
+  freshest cells, dedupes by `originalId`, prepends new ones; returns the count added.
+  Always reflects the latest feed, independent of the background schedule.
 - **`runSeoRetro()` / `runKPI()`** — fetch the SEO retrospective / KPI snapshot into `reports` + dashboard metrics.
 - **`morning()`** — the "update network" batch (KPI + inbox).
 - **`toggleAgent(id)`** — flip an agent on/off.
+
+### Trend Radar (Global/Greece feed + idea generator)
+- **`setTrendScope(scope)` / `loadRadar(scope, scan?)`** — switch tab / load (or recompute) the feed.
+- **`openTrendIdea(id)` / `closeTrendIdea()`** — open/close the per-trend idea modal.
+- **`createCellFromRadarTrend(trend)`** — raw article cell straight from a trend.
+- **`createSocialCell({...})` / `createArticleCellFromIdea({...})`** — per-idea "Create cell":
+  set `boardKind`, prepend the cell, open the drawer (the modal then routes to `/newsroom`).
+- **`cacheTrendDrafts(id, drafts)` / `cacheTrendResearch(id, research)` / `setTrendBrands(id, ids)`**
+  — temporary, in-memory caches so generated AI output + brand selection survive navigation.
 
 ### UI
 - **`setScope(scope)`** — `"all"` or a site id (filters the board/dashboard).

@@ -1,76 +1,115 @@
-# Trend Radar Agent — how it works, how to use it, how to feed it keys
+# Trend Radar
 
-Identifies the **fastest-rising** topics across platforms (Greece), clusters the same topic across
-sources into one signal, scores by **velocity (rate-of-change), not volume**, routes each to a portal,
-and surfaces a ranked board in MATRIX with one-click **"Create Story Cell from trend"**.
-Same design law: sources provide the numbers; the LLM only names/angles. **No mocks** — empty until a
-source key is added.
+A continuous trend-intelligence feed: it scans the open internet/social platforms for what's
+trending **right now** (NOT limited to our accounts), split into **GLOBAL** and **GREECE** tabs,
+filterable by **category** (sports/politics/entertainment/…). Clicking a trend opens a popup that
+(optionally) **researches why it's trending now** and generates ready-to-use content ideas/drafts
+(social posts, full article, reel script) conditioned on each of our **brand profiles**, via Claude.
 
-## Data flow
+Each generated idea has a **"Create cell"** button that drops it straight into the Newsroom —
+social posts/reel → the **Social** board, the article → the **Articles** board (fully populated:
+title options, meta, keywords/tags, body) — then navigates you there. See
+[NEWSROOM.md](./NEWSROOM.md) for the two boards. The generated drafts + research are **cached
+per-trend in the browser** (in-memory, session-only) so navigating away and back never loses them
+and you never pay Claude twice.
+
+It is built on top of the existing **Social Radar** service (it reuses the connector layer,
+clustering, scoring and SQLite store) by adding an **unfiltered, geo-scoped** path parallel to the
+brand-filtered Ideas/Gaps engine. (Supersedes the earlier n8n Trend Radar, which is idle.)
+
+## Architecture
 ```
- cron 08:00 Athens / kick webhook
-   → Load Config (keys) → adapters (fail-soft) → normalize → cluster (by topic) →
-     score (z-score vs baseline, else percentile × corroboration) → route (site kw) →
-     rank → write trend_radar (+ trend_samples baselines)
- FE Scan → /api/agents/trends → "Trend Radar API" webhook → latest trend_radar → board
+Connectors (per scope) → normalize → cluster → score → classify category → Trend[]   (social-radar)
+   GET /trends?scope=greece|global   POST /trends/:id/research   POST /trends/:id/generate (Claude)
+                  │                            │                            │
+   matrix-newsroom: /api/agents/trend-radar  /api/agents/trend-research  /api/agents/trend-idea
+                  │                            │                            │  (secret proxies)
+   /trends page: TrendRadar (Global|Greece tabs + category chips) → card → TrendIdea modal
+                                              │                            │
+                              "Έρευνα" (why trending + sources)   "Δημιουργία ιδεών" → per-idea
+                                                                  "Create cell" → Newsroom board
 ```
+- **Ingestion**: `social-radar` `POST /scan` runs both the brand-filtered Ideas board AND the
+  unfiltered Trend Radar for both scopes; the daily cron + boot seed keep it fresh.
+- **Research-then-generate**: `POST /trends/:id/generate` first runs (and caches) research so the
+  ideas are grounded in real, current facts (guardrail: a negative/somber event never yields promo
+  ideas). `POST /trends/:id/research` can also be run on its own from the modal's **"Έρευνα"** button
+  (Claude `web_search`), returning `whyTrending`, `entityType`, a summary and **sources**.
+- **DB (SQLite)** tables: `trends` (latest feed per scope), `trend_history` (velocity across runs),
+  `drafts` (generated ideas), `research` (per-trend why-trending cache), plus existing
+  `samples`/`board`/`idea_state`.
+- **No relevance gate**: unlike Ideas, trends are NOT discarded for being off-brand. `suggestedBrands`
+  on each trend is advisory (which of our brands could use it).
 
-## Sources (each a concrete free/paid API; paid ones share one Apify token)
-| Source | API | Free/Paid | Key (row in `trend_config`) |
-|---|---|---|---|
-| YouTube (Shorts incl.) | Data API v3 `mostPopular?regionCode=GR` | free (10k/day) | `youtube_api_key` |
-| Google Trends | Apify `steadyfetch/google-trends-scraper` | paid | `apify_token` |
-| TikTok | Apify `novi/tiktok-trend-api` | paid | `apify_token` |
-| Instagram (Reels/hashtags) | Apify `instagram-hashtag-scraper` | paid | `apify_token` |
-| X/Twitter | GetXAPI | paid (cheap) | `getxapi_token` |
+## Generated ideas → article cell (full SEO package)
+The generator returns, per brand: `socialPosts[]`, `shortVideo`, and an **`article`** with
+`headline`, `outline`, `draft`, plus **`seoTitles[]`, `meta`, `keywords[]`** (defaulted for back-compat
+with older cached drafts). When you press **"Create cell"** on the article idea, the Newsroom builds a
+complete Articles-board cell — title options (from `seoTitles`), meta/excerpt, keywords→tags, an HTML
+body (outline as H2 + draft), `aiVersion: 1` — i.e. it arrives ready to edit, exactly like an AMNA
+wire cell. Social posts/reel become **Social-board** cells at the `idea` stage with platform + caption
++ hashtags pre-filled.
 
-**Minimum to go live: `youtube_api_key` + `apify_token`.** Each adapter is independent and fails soft —
-a missing key or a dead source just drops out; the rest proceed.
+## Sources — live vs paid
+| Source | Status | Greece | Global | Key |
+|--------|--------|--------|--------|-----|
+| **YouTube Data API v3** (mostPopular) | **LIVE, free** | `regionCode=GR` | region basket (`YOUTUBE_GLOBAL_REGIONS`) | `YOUTUBE_API_KEY` |
+| **Google Trends** (Apify `vnx0~google-trends-scraper`) | **LIVE** | `geo=GR` | `geo=""` worldwide | `APIFY_TOKEN` |
+| TikTok (Apify `automation-lab~tiktok-trends-scraper`) | stub (env-gated) | ✓ | ✓ | `APIFY_TOKEN` + `TIKTOK_ENABLED` |
+| X/Twitter (Apify `karamelo~twitter-trends-scraper`) | stub (env-gated) | ✓ | ✓ | `APIFY_TOKEN` + `X_ENABLED` |
+| Google Autocomplete | live (Greece only) | ✓ | — | `AUTOCOMPLETE_ENABLED` |
+| News/RSS | live (Greece only) | ✓ | — | `NEWS_RSS_FEEDS` |
+| Meta (Instagram/Facebook) | **not wired** — Graph API can't do discovery | — | — | needs a paid provider |
 
-## How to feed it keys
-Add rows to the n8n Data Table **`trend_config`** (`u0RMheQO8Ug6d8Um`) — one row per key:
-`{ name: "youtube_api_key", value: "<key>" }`, `{ name: "apify_token", value: "<token>" }`, etc.
-(Add via the n8n UI, or give the values to Claude to insert via the REST API.) Then re-run the agent.
+> Graceful degradation: a disabled/missing source contributes nothing; the scan proceeds on the rest.
 
-## How to use it
-- **Scan now:** Trend Radar page → "Scan trends now" (reads the latest board). Cards show velocity bar,
-  platform badges, lifecycle (αναδύεται/εκτοξεύεται/κορυφώνεται/υποχωρεί), coverage chip, Greek angle,
-  sparkline, and **Create cell** (seeds a routed Story Cell into the board).
-- **Daily:** cron 08:00 Athens. **Manual re-run/seed:** `POST /webhook/matrix-trends-run` (+ `x-matrix-secret`).
+### Provider matrix (verify CURRENT pricing before enabling — this landscape changes)
+- **Apify** (already integrated): pay-per-result actors for Google Trends, TikTok, X, IG/FB. Cheapest
+  way to fill gaps incrementally — recommended for Phase 2.
+- **Data365 / Shortimize**: unified social / short-form APIs — evaluate for **Meta (IG/FB) discovery**,
+  which the official Graph API does not provide.
+- **Talkwalker / Brandwatch**: enterprise social listening — broad coverage but high cost; only if budget justifies.
+- Official/free: YouTube Data API, Google News/RSS.
 
-## n8n resources (paotalk)
-- Tables: `trend_config` `u0RMheQO8Ug6d8Um`, `trend_samples` `X6ypi9Hp0xbAqcwE` (baselines),
-  `trend_radar` `tY6o6GdYp0UNghAs` (board).
-- Workflows: **"Trend Radar — Daily"** `coiH8g2nbmkA8BZQ` (cron + `/webhook/matrix-trends-run`),
-  **"Trend Radar API"** `hbFX708dTCHLOoKO` (`/webhook/matrix-trends`).
-- FE: `src/app/api/agents/trends/route.ts`, `services/agents.ts → scanTrends`, store `createCellFromTrend`,
-  `components/trends/Trends.tsx`. Env: `N8N_TRENDS_WEBHOOK_URL` + `N8N_SEO_SECRET`.
+## Brand profiles ("profiles of our media")
+Editable config: `social-radar/src/config/sites.ts` → `PROFILES: MediaProfile[]` (name, audience,
+`values` = voice, vertical, seeds, `preferredFormats`, `language`). The generator conditions Claude
+output on the selected profile(s). The FE modal lists brands from `matrix-newsroom/src/lib/config/sites.ts`
+`SITES` (ids must match between the two files).
 
-## Status & next — ALL FOUR SOURCES LIVE (GR), real data
-Verified `platforms=['google','tiktok','x','youtube']` end-to-end. Actual actors/endpoints wired:
-| Source | actor/endpoint | input | speed/reliability | maps to |
-|---|---|---|---|---|
-| Google Trends | Apify `vnx0/google-trends-scraper` (Code node) | `{geo:"GR"}` | ~5s, reliable | term=query, vel=score |
-| YouTube | Data API `mostPopular?regionCode=GR` (Code node) | key | fast | term=title, vel=views%ile |
-| X/Twitter | Apify `karamelo/twitter-trends-scraper` (Code node) | `{countryCode:"GR"}` | ~6s, reliable | term=trend, vel=rank |
-| TikTok | Apify `automation-lab/tiktok-trends-scraper` (**HTTP node**, 200s timeout) | `{trendType:"hashtag",countryCode:"GR",period:7}` | **~90s, ~2/3 reliable** | term=hashtag, vel=rank |
+**Add a brand profile:** add a `MediaProfile` to `PROFILES` and a matching `Site` to FE `SITES` (same `id`).
 
-- **Apify must run in HTTP/Code adapter nodes, never one combined Code node** (60s Code limit; TikTok alone
-  is ~90s → must be an HTTP node). Token resolved in a "Read Keys" Code node (n8n expressions reject inline
-  arrow fns). Routing is accent-insensitive + **whole-word** (so `ev` ≠ "r**ev**eal").
-- **Caveats (honest):** TikTok actor is slow (~90s) and flaky (~1/3 runs fail → empty that day, fail-soft);
-  its top GR hashtags are generic (#fyp/#trending). X `volume` is often empty → velocity uses rank order.
-  **GetXAPI key is NOT used** (its API is tweet/search, no trends endpoint) — kept in `trend_config` for
-  future tweet-content enrichment.
-- Next: LLM topic-naming + Greek angle (OpenAI on paotalk); real coverage match; per-zone source weighting;
-  velocity sharpens to z-score as `trend_samples` accrues.
-- **n8n adapter notes (learned at runtime):** Apify must be called from **HTTP/Code nodes, NOT a single
-  Code node** (Code nodes have a hard 60s limit; two `run-sync` calls blow past it). Token is resolved in
-  a "Read Keys" Code node (n8n's expression engine rejected an inline arrow-function). Google actor =
-  `vnx0/google-trends-scraper`, input `{geo:"GR"}`.
-- **TikTok pending:** the `automation-lab/tiktok-trends-scraper` actor is a **$39/mo rental** — it returns
-  nothing via `run-sync` until rented on the Apify account (or swap to a pay-per-result TikTok actor).
-  Other adapters (YouTube free, X/GetXAPI) await their keys in `trend_config`.
-- Phase 2: rent/swap TikTok + add YouTube/X keys; real-time fast loop + breaking alerts/auto-cell; LLM
-  topic-naming + Greek angle (OpenAI, already on paotalk); real coverage match; per-zone source weighting.
-  Velocity sharpens from interest-score/percentile into a true **z-score** as `trend_samples` grows.
+## Add a new source connector (pluggable)
+1. Implement `SourceAdapter` (`{ id, platform, fetchTrending(region) → RawDemand[] }`) in `social-radar/src/adapters/<name>.ts` (fail-soft → `[]`).
+2. Register it in `src/adapters/index.ts` `liveSources()` (for the Ideas engine) and/or in
+   `src/pipeline/radar.ts` `geoAdapters()` (for the Trend Radar; geo-capable adapters only).
+3. Add its env flag(s) to `src/config/env.ts` + `.env.example`.
+
+## Env vars
+**social-radar:** `SOCIAL_RADAR_REGION` (GR), `PORT`, `SOCIAL_RADAR_SECRET`, `STORE` (sqlite),
+`SQLITE_PATH`, `ANTHROPIC_API_KEY` (+`ANTHROPIC_MODEL`), `YOUTUBE_API_KEY`/`YOUTUBE_ENABLED`,
+**`YOUTUBE_GLOBAL_REGIONS`** (CSV, default `US,GB,DE,FR,BR,IN`), `APIFY_TOKEN`,
+`GOOGLE_TRENDS_ENABLED`, `TIKTOK_ENABLED`, `X_ENABLED`, `AUTOCOMPLETE_ENABLED`,
+`NEWS_RSS_FEEDS`/`NEWS_ENABLED`, `WP_REST_BASES`/`COVERAGE_ENABLED`, `DAILY_CRON`, `FAST_LOOP_*`.
+**matrix-newsroom:** `SOCIAL_RADAR_URL` (the service URL), `N8N_SEO_SECRET` (shared secret == `SOCIAL_RADAR_SECRET`).
+
+## Reset / ops
+- Recompute now: `POST /scan` (or the FE "Ανανέωση" button → `POST /api/agents/trend-radar?scope=`).
+- Reset the feed: clear the `trends` / `trend_history` tables (the next scan rebuilds them).
+- Reset research/ideas: clear the `research` / `drafts` tables (re-run from the modal).
+- Generation & research are on-demand per click (Claude); scanning Google Trends/YouTube is free/cheap.
+- The FE caches generated drafts + research per-trend **in memory only** (cleared on a full reload),
+  so it never re-calls Claude just because you switched tabs.
+
+## Deploy
+The new endpoints (`/trends`, `/trends/:id/generate`) and pipeline live in `social-radar`. **Deploy
+social-radar to Railway** for the production FE (which points `SOCIAL_RADAR_URL` at the Railway URL) to
+use them — until then the production `/trends` page will 404 against the old build. Set
+`ANTHROPIC_API_KEY` on Railway so generation uses real Claude (locally without it, generation falls
+back to a deterministic template).
+
+## Verified (local, real data)
+Google Trends + YouTube live → `/scan` produced **Greece 40 / Global 100+** trends; `/trends?scope=`
+returns each scope; `POST /trends/:id/generate {profileIds}` returns per-brand social/article/reel
+drafts; the FE `/trends` tabs + click→modal→generate chain works end-to-end. Existing Ideas/Gaps +
+AMNA `/route` unaffected.

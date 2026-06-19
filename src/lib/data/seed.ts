@@ -15,6 +15,7 @@ const cell = (o: Partial<Cell> & Pick<Cell, "id" | "headline">): Cell => ({
   routeReason: "",
   urgency: "standard",
   status: "inbox",
+  kind: "article",
   createdAt: now,
   slaDeadline: null,
   event: "",
@@ -58,6 +59,7 @@ export const SEED: NewsroomState = {
     topArticles: [],
   },
   siteKpi: {},
+  kpiMeta: null,
   // SEO Health fills only from a real generated report (Reports → Χθεσινή).
   seo: {
     status: "green",

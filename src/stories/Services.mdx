@@ -22,11 +22,23 @@ content. The one exception is the deterministic router fallback (below).
 - **`scanTrends(scope)` → `Trend[] | null`** and **`findGaps(scope)` → `Gap[] | null`**
   — one engine (Social Radar) via `/api/agents/ideas`; projected to Trend / Gap.
 - **`setIdeaState(id, state)`** — write idea state back (assign / dismiss / seen).
-- **`getInbox()` → `Cell[] | null`** — pull ingested AMNA wire cells (`/api/agents/inbox`).
-- **`getAmnaConfig()` / `setAmnaInterval(min)` / `runAmnaIngest()`** — read/set the
-  AMNA ingestion cadence (minutes; `0` = manual) and manually kick a crawl.
+- **`getInbox()` → `Cell[] | null`** — read the freshest ingested AMNA wire cells (`/api/agents/inbox`).
+- **`runAmnaIngest()` → `boolean`** — kick the AMNA crawl and **wait for it to finish**
+  (`/api/agents/amna-run` awaits the n8n Kick, cap ~85s). The store's `pullInbox` runs this
+  before `getInbox`, so the manual "Λήψη feed" always fetches the latest.
+- **`getAmnaConfig()` / `setAmnaInterval(min)`** — read/set the AMNA ingestion cadence
+  (minutes; `0`/empty = manual-only).
 - **`runSeoRetro()` → `SeoRetroResult | null`** — yesterday's SEO retrospective.
 - **`getKpi()` → `KpiResult | null`** — GA4 pageviews + WP article counts snapshot.
+
+### Trend Radar (`agents.ts`)
+- **`getRadarTrends(scope, scan?)` → `RadarTrend[] | null`** — the Global/Greece feed
+  (`/api/agents/trend-radar`); `scan=true` forces a recompute.
+- **`researchTrend(trendId)` → `TrendResearch | null`** — why a trend is trending now,
+  with sources (`/api/agents/trend-research` → Claude `web_search`).
+- **`generateTrendIdeas(trendId, profileIds)` → `{ drafts, research } | null`** — per-brand
+  social/article/reel ideas grounded in the research (`/api/agents/trend-idea`). The article
+  idea includes `seoTitles`/`meta`/`keywords` so a created cell is a full SEO article.
 
 ## `router.ts`
 - **`routeContent(text)`** — deterministic, accent-insensitive, whole-word keyword
@@ -38,7 +50,10 @@ content. The one exception is the deterministic router fallback (below).
 - **`canPublish(cell)`** — `true` only when no **critical** blocker remains.
 - **`criticalBlockers(cell)`** — the list of blocking issues for the drawer.
 
-## `wordpress.ts`
+## `wordpress.ts` / `social.ts`
 - **`publishToWp(cell)`** — **stub** (`TODO(backend)`): returns a fake post id
   after a short delay. The publish flow is wired live; only the WP REST POST is
   stubbed until the backend lands.
+- **`publishToSocial(cell)`** — **stub** for the Social board's "Δημοσίευση τώρα":
+  returns a fake post id after a short delay. Real Meta/TikTok/X publishing is
+  `TODO(backend)`; the flow is otherwise fully wired.

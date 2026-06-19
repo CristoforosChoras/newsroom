@@ -18,6 +18,23 @@ export type ColumnId =
   | "review"
   | "published";
 
+// Social board — a separate lifecycle for social posts/reels. Distinct ids from
+// ColumnId so a cell's status unambiguously identifies its board + column.
+export type SocialColumnId =
+  | "idea"
+  | "composing"
+  | "approval"
+  | "scheduled"
+  | "posted";
+
+// A cell is either an "article" (long-form, WP + SEO gate) or a "social" post.
+// Missing kind = "article" everywhere (back-compat for persisted v4 cells).
+export type CellKind = "article" | "social";
+
+// Any board column id. `Cell.status` is one of these; which set is valid depends
+// on `Cell.kind` (article → ColumnId, social → SocialColumnId).
+export type Stage = ColumnId | SocialColumnId;
+
 export type Urgency = "breaking" | "standard" | "evergreen";
 export type Status = "green" | "amber" | "red";
 export type Scope = "all" | string; // "all" | site id
@@ -51,7 +68,14 @@ export interface Cell {
   confidence: number | null; // routing confidence 0-100
   routeReason: string;
   urgency: Urgency;
-  status: ColumnId;
+  status: Stage;
+  kind?: CellKind; // missing = "article" (back-compat); "social" → Social board
+  // social-cell fields (kind === "social"; optional → article cells omit them):
+  platform?: string; // instagram / tiktok / x / facebook / reel …
+  caption?: string; // the post body
+  hashtags?: string[];
+  scheduledAt?: number | null; // when "Έγκριση & Προγραμματισμός" set a time
+  trendTitle?: string; // provenance: the radar trend this idea came from
   createdAt: number;
   slaDeadline: number | null;
   event: string; // raw event description (router + draft input)
@@ -231,13 +255,62 @@ export interface Agent {
   desc: string;
 }
 
+// ── GA4 KPI (accurate, matches the GA4 Reports UI) ──
+export type Finality = "preliminary" | "final";
+export interface KpiFlags {
+  sampled: boolean;
+  thresholded: boolean;
+}
+// One window's headline metrics for a site (from a dimensionless GA4 total query).
+export interface KpiMetrics {
+  activeUsers: number;
+  newUsers: number;
+  sessions: number;
+  engagedSessions: number;
+  engagementRate: number; // 0..1
+  screenPageViews: number;
+  keyEvents: number;
+  avgEngagementTime: number; // seconds
+  conversionRate: number; // keyEvents / sessions
+  deltas: Record<string, number>; // % vs previous equal-length period, per metric
+  finality: Finality;
+}
+export interface KpiSeriesPoint {
+  date: string; // YYYYMMDD
+  screenPageViews: number;
+  sessions: number;
+  activeUsers: number;
+  finality: Finality;
+}
+export interface KpiChannel {
+  channel: string;
+  sessions: number;
+  activeUsers?: number;
+}
+export interface KpiTopPage {
+  title: string;
+  path: string;
+  views: number;
+}
+export interface KpiLanding {
+  landingPage: string;
+  sessions: number;
+}
+
 export interface SiteKpi {
-  views: number; // pageviews TODAY (matches GA4 "today")
+  views: number; // pageviews TODAY (back-compat; = today screenPageViews)
   views7d?: number; // 7-day total (context)
-  delta: number; // % today vs yesterday
+  delta: number; // % today vs yesterday (back-compat; = 7d screenPageViews delta)
   articles: number;
   seo: Status;
   wp: boolean;
+  // ── enriched GA4 fields (optional → back-compat with old/empty snapshots) ──
+  byWindow?: Record<string, KpiMetrics>; // "today" | "7d" | "28d"
+  series?: Record<string, KpiSeriesPoint[]>; // per window (7d, 28d)
+  channels?: Record<string, KpiChannel[]>;
+  topPages?: Record<string, KpiTopPage[]>;
+  topLanding?: Record<string, KpiLanding[]>;
+  timezone?: string; // property timezone (from GA4 metadata)
 }
 
 export interface SeoState {
@@ -247,12 +320,40 @@ export interface SeoState {
   actions: string[];
 }
 
+// Network rollup for one window. Summable metrics sum cleanly across properties;
+// activeUsers/newUsers do NOT (a person on two sites counts twice) → "approx".
+export interface NetworkWindow {
+  totals: {
+    sessions: number;
+    screenPageViews: number;
+    keyEvents: number;
+    engagedSessions: number;
+  };
+  activeUsersApprox: number;
+  newUsersApprox: number;
+  deltas: Record<string, number>;
+  finality: Finality;
+}
+
 export interface NetworkState {
-  week: { d: string; v: number }[]; // daily network pageviews (in K)
+  week: { d: string; v: number; date?: string; finality?: Finality }[]; // daily network pageviews (in K)
   sources: { s: string; p: number }[];
   topArticles: { t: string; v: number; site: string }[];
   delta?: number; // network % today vs yesterday
   today?: number; // network pageviews today (raw)
+  // ── enriched (optional → back-compat) ──
+  byWindow?: Record<string, NetworkWindow>;
+  channels?: { channel: string; sessions: number }[]; // network acquisition (7d)
+}
+
+// Snapshot-level KPI metadata (freshness + flags), surfaced in the dashboard.
+export interface KpiMeta {
+  generatedAt: number;
+  lastUpdated: number;
+  windows: string[]; // e.g. ["today","7d","28d"]
+  defaultWindow: string;
+  flags: KpiFlags;
+  finalityByWindow: Record<string, Finality>;
 }
 
 export interface NewsroomState {
@@ -266,4 +367,59 @@ export interface NewsroomState {
   siteKpi: Record<string, SiteKpi>;
   seo: SeoState;
   network: NetworkState;
+  kpiMeta: KpiMeta | null; // freshness + sampling/threshold flags (null until first run)
+}
+
+// ── Trend Radar (unfiltered Global/Greece feed + per-brand idea generator) ──
+export type TrendScope = "greece" | "global";
+
+export interface RadarTrend {
+  id: string;
+  scope: TrendScope;
+  category: string; // topic bucket (sports/politics/entertainment/…)
+  title: string;
+  entities: { type: string; name: string }[];
+  platforms: string[];
+  sources: string[];
+  thumbnail: string | null;
+  metric: { kind: string; value: number };
+  demand: number;
+  velocity: number;
+  recency: number;
+  crossPlatform: number;
+  score: number;
+  lifecycle: TrendLifecycle;
+  sampledAt: number;
+  suggestedBrands: { site: string; confidence: number; reason: string }[];
+}
+
+export interface GeneratedIdeas {
+  socialPosts: { platform: string; hook: string; caption: string; hashtags: string[] }[];
+  article: {
+    headline: string;
+    outline: string[];
+    draft: string;
+    // richer SEO package (optional → old cached drafts / template fallback omit
+    // them; the FE derives fallbacks so the article cell is always "full").
+    seoTitles?: string[]; // alternative titles to choose from
+    meta?: string; // 150–160 char meta description
+    keywords?: string[]; // LSI keywords / tags
+  };
+  shortVideo: { hook: string; script: string };
+}
+
+export interface TrendIdeaDraft {
+  id: string;
+  trendId: string;
+  profileId: string;
+  ideas: GeneratedIdeas;
+  createdAt: number;
+}
+
+export interface TrendResearch {
+  whyTrending: string;
+  entityType: "person" | "event" | "product" | "place" | "other";
+  summary: string;
+  sources: { title: string; url: string }[];
+  researchedAt: number;
 }

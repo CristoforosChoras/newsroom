@@ -16,6 +16,7 @@ import {
   Pilcrow,
   Quote,
   Send,
+  Sparkles,
   X,
 } from "lucide-react";
 import { siteById } from "@/lib/config/sites";
@@ -60,6 +61,7 @@ export default function ArticleEditor() {
   const close = useNewsroom((s) => s.closeEditor);
   const updateCell = useNewsroom((s) => s.updateCell);
   const publishWP = useNewsroom((s) => s.publishWP);
+  const generateDraft = useNewsroom((s) => s.generateDraft);
 
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
@@ -85,6 +87,17 @@ export default function ArticleEditor() {
     if (!bodyRef.current) return;
     updateCell(c.id, { body: bodyRef.current.innerHTML });
     setWords(countWords(bodyRef.current.innerText || ""));
+  };
+
+  // Manual "rewrite with AI" — runs the draft service (Claude via n8n) on this
+  // cell, then re-syncs the uncontrolled contentEditable with the new body.
+  const rewriteAI = async () => {
+    await generateDraft(c.id);
+    const fresh = useNewsroom.getState().cells.find((x) => x.id === c.id);
+    if (bodyRef.current && fresh) {
+      bodyRef.current.innerHTML = fresh.body || "";
+      setWords(countWords(bodyRef.current.innerText || ""));
+    }
   };
 
   const exec = (cmd: string, arg?: string) => {
@@ -176,7 +189,18 @@ export default function ArticleEditor() {
               />
             </div>
 
-            <label className={styles.fieldLabel}>{T.editor.fieldBody}</label>
+            <div className={styles.bodyLabelRow}>
+              <label className={styles.fieldLabel}>{T.editor.fieldBody}</label>
+              <Button
+                small
+                variant="soft"
+                icon={Sparkles}
+                loading={c._drafting}
+                onClick={() => void rewriteAI()}
+              >
+                {T.editor.rewriteAi}
+              </Button>
+            </div>
             <div className={styles.toolbar}>
               {TOOLS.map((t, i) => (
                 <button

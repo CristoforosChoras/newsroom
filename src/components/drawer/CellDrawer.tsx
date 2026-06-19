@@ -3,11 +3,14 @@
 import { useState } from "react";
 import {
   ArrowRight,
+  CalendarClock,
   CheckCircle2,
   Circle,
   FileText,
   Globe,
+  Hash,
   Link2,
+  PenLine,
   Search,
   Send,
   Shuffle,
@@ -17,7 +20,7 @@ import {
   Undo2,
   X,
 } from "lucide-react";
-import { COLUMNS, SITES } from "@/lib/config/sites";
+import { COLUMNS, SITES, columnsFor, stageLabel } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
 import {
   userById,
@@ -25,7 +28,7 @@ import {
   editorsForSite,
 } from "@/lib/config/team";
 import { evaluateGate } from "@/lib/services/seoGate";
-import { timeHM } from "@/lib/utils/time";
+import { timeHM, dateTimeShort } from "@/lib/utils/time";
 import { T } from "@/lib/config/strings";
 import Button from "@/components/ui/Button";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -48,10 +51,236 @@ export default function CellDrawer() {
   const sendBack = useNewsroom((s) => s.sendBack);
   const approveAndPublish = useNewsroom((s) => s.approveAndPublish);
   const reassign = useNewsroom((s) => s.reassign);
+  const composeSocial = useNewsroom((s) => s.composeSocial);
+  const submitSocialForApproval = useNewsroom((s) => s.submitSocialForApproval);
+  const approveSocialSchedule = useNewsroom((s) => s.approveSocialSchedule);
+  const returnSocial = useNewsroom((s) => s.returnSocial);
+  const postSocial = useNewsroom((s) => s.postSocial);
+  const flash = useNewsroom((s) => s.flash);
   const [note, setNote] = useState("");
+  const [hashIn, setHashIn] = useState("");
+  const [when, setWhen] = useState("");
 
   if (!cell) return null;
   const c = cell;
+
+  // ── Social cell: a lighter, SEO-gate-free drawer with its own pipeline ──
+  if (c.kind === "social") {
+    const PLATFORMS = ["instagram", "tiktok", "facebook", "x", "youtube", "reel", "linkedin"];
+    const tags = c.hashtags ?? [];
+    const addHash = () => {
+      const t = hashIn.trim().replace(/^#/, "");
+      if (!t) return;
+      if (!tags.includes(t)) updateCell(c.id, { hashtags: [...tags, t] });
+      setHashIn("");
+    };
+    const removeHash = (t: string) =>
+      updateCell(c.id, { hashtags: tags.filter((x) => x !== t) });
+
+    return (
+      <div className={styles.backdrop} onClick={closeCell}>
+        <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.head}>
+            <SiteTag id={c.site} />
+            {c.platform && <span className={styles.breaking}>{c.platform}</span>}
+            <X
+              size={20}
+              color="var(--dim)"
+              className={styles.close}
+              onClick={closeCell}
+            />
+          </div>
+
+          <input
+            className={styles.headline}
+            value={c.headline}
+            onChange={(e) => updateCell(c.id, { headline: e.target.value })}
+          />
+          <div className={styles.meta}>
+            {c.source} · {timeHM(c.createdAt)}
+          </div>
+
+          {/* stage actions */}
+          <div className={styles.section}>
+            <Eyebrow icon={ArrowRight}>{T.drawer.flow(stageLabel(c.status))}</Eyebrow>
+
+            {c.status === "idea" && (
+              <div className={styles.stageActions}>
+                <Button icon={PenLine} onClick={() => composeSocial(c.id)}>
+                  {T.drawer.compose}
+                </Button>
+              </div>
+            )}
+
+            {c.status === "composing" && (
+              <div className={styles.stageActions}>
+                <Button icon={Send} onClick={() => submitSocialForApproval(c.id)}>
+                  {T.drawer.submitForApproval}
+                </Button>
+              </div>
+            )}
+
+            {c.status === "approval" && (
+              <div className={styles.stageActions}>
+                <input
+                  type="datetime-local"
+                  className={styles.picker}
+                  value={when}
+                  onChange={(e) => setWhen(e.target.value)}
+                />
+                <Button
+                  icon={CalendarClock}
+                  onClick={() => {
+                    const ms = when ? new Date(when).getTime() : NaN;
+                    if (!ms || Number.isNaN(ms)) return flash(T.drawer.needSchedule);
+                    approveSocialSchedule(c.id, ms);
+                  }}
+                >
+                  {T.drawer.approveAndSchedule}
+                </Button>
+                <Button icon={Undo2} variant="ghost" onClick={() => returnSocial(c.id)}>
+                  {T.drawer.returnToCompose}
+                </Button>
+              </div>
+            )}
+
+            {c.status === "scheduled" && (
+              <div className={styles.stageActions}>
+                <div className={styles.owner}>
+                  {c.scheduledAt
+                    ? T.drawer.scheduledFor(dateTimeShort(c.scheduledAt))
+                    : ""}
+                </div>
+                <Button
+                  icon={Send}
+                  loading={c._publishing}
+                  onClick={() => void postSocial(c.id)}
+                >
+                  {T.drawer.postNow}
+                </Button>
+                <Button icon={Undo2} variant="ghost" onClick={() => returnSocial(c.id)}>
+                  {T.drawer.returnToCompose}
+                </Button>
+              </div>
+            )}
+
+            {c.status === "posted" && (
+              <div className={styles.stageActions}>
+                <div className={styles.published}>
+                  <CheckCircle2 size={16} /> {T.drawer.posted}
+                  {c.scheduledAt ? ` · ${dateTimeShort(c.scheduledAt)}` : ""}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* routing (brand) */}
+          <div className={styles.routing}>
+            <div className={styles.routingHead}>
+              <Shuffle size={14} color="var(--orange)" />
+              <span className={styles.routingTitle}>{T.drawer.routing}</span>
+            </div>
+            <div className={styles.chips}>
+              {SITES.map((site) => {
+                const selected = c.site === site.id;
+                return (
+                  <span
+                    key={site.id}
+                    onClick={() => updateCell(c.id, { site: site.id })}
+                    className={styles.chip}
+                    style={{
+                      color: selected ? "#0a0a0b" : site.color,
+                      background: selected ? site.color : "transparent",
+                      borderColor: `${site.color}66`,
+                    }}
+                  >
+                    {site.name}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* platform */}
+          <Eyebrow icon={Globe}>{T.drawer.socialPlatform}</Eyebrow>
+          <div className={styles.chips}>
+            {PLATFORMS.map((p) => {
+              const selected = c.platform === p;
+              return (
+                <span
+                  key={p}
+                  onClick={() => updateCell(c.id, { platform: p })}
+                  className={[styles.stage, selected ? styles.stageSel : ""]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  {p}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* caption */}
+          <Eyebrow icon={PenLine}>{T.drawer.socialCaption}</Eyebrow>
+          <textarea
+            className={styles.textarea}
+            value={c.caption ?? ""}
+            placeholder={T.drawer.socialCaptionPlaceholder}
+            onChange={(e) => updateCell(c.id, { caption: e.target.value })}
+          />
+
+          {/* hashtags */}
+          <Eyebrow icon={Hash}>{T.drawer.socialHashtags}</Eyebrow>
+          <div className={styles.keywords}>
+            {tags.map((t, i) => (
+              <span
+                key={i}
+                className={styles.keyword}
+                onClick={() => removeHash(t)}
+                title={T.drawer.removeHashtag}
+              >
+                #{t} ✕
+              </span>
+            ))}
+          </div>
+          <input
+            className={styles.picker}
+            value={hashIn}
+            placeholder={T.drawer.socialHashtagsPlaceholder}
+            onChange={(e) => setHashIn(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addHash();
+              }
+            }}
+          />
+
+          {/* stage chips */}
+          <div className={styles.section}>
+            <Eyebrow icon={ArrowRight}>{T.drawer.stage}</Eyebrow>
+            <div className={styles.stages}>
+              {columnsFor("social").map((col) => {
+                const selected = c.status === col.id;
+                return (
+                  <span
+                    key={col.id}
+                    onClick={() => move(c.id, col.id)}
+                    className={[styles.stage, selected ? styles.stageSel : ""]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {col.label}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const gate = evaluateGate(c);
   const criticals = gate.blockers.filter((b) => b.severity === "critical");
   const blocked = criticals.length > 0;
@@ -143,6 +372,14 @@ export default function CellDrawer() {
                   ))}
                 </select>
               )}
+              <Button
+                icon={Sparkles}
+                variant="soft"
+                loading={c._drafting}
+                onClick={() => void generateDraft(c.id)}
+              >
+                {T.editor.rewriteAi}
+              </Button>
             </div>
           )}
 

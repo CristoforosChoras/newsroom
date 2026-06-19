@@ -8,6 +8,15 @@ import { siteBySeoKey, siteById } from "@/lib/config/sites";
 
 export const dynamic = "force-dynamic";
 
+// First sentence (or first ~180 chars) of the source text, for a short event line.
+function firstSentence(text: string | undefined): string {
+  const t = (text ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const cut = t.slice(0, 180);
+  const m = cut.match(/^(.*?[.;!?·])\s/);
+  return (m ? m[1] : cut).trim();
+}
+
 function toFeId(site: string | null | undefined): string | null {
   if (!site) return null;
   if (siteById(site)) return site;
@@ -38,7 +47,14 @@ async function fetchInbox() {
   const arr: Cell[] = Array.isArray(raw)
     ? (raw as Cell[])
     : ((raw as { cells?: Cell[] }).cells ?? []);
-  const cells = arr.map((c) => ({ ...c, site: toFeId(c.site) }));
+  const cells = arr.map((c) => ({
+    ...c,
+    site: toFeId(c.site),
+    // amna_cells has no `event` column; derive a short event description from the
+    // lead (meta) or the first sentence of the original text so the drawer's
+    // "Event" field isn't empty for wire-ingested cells.
+    event: (c.event?.trim() || c.meta?.trim() || firstSentence(c.sourceText)) ?? "",
+  }));
   return { ok: true as const, cells };
 }
 

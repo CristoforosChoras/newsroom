@@ -40,7 +40,23 @@
   padding: 14px 16px;
 }
 
-.list {
+.sectionTitle {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 9px;
+}
+
+.sectionTitle:not(:first-child) {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.list,
+.steps {
   margin: 0;
   padding-left: 18px;
   display: flex;
@@ -48,8 +64,18 @@
   gap: 8px;
 }
 
-.list li {
+.list li,
+.steps li {
   font-size: 12.5px;
   line-height: 1.55;
   color: var(--dim);
+}
+
+.steps li {
+  padding-left: 3px;
+}
+
+.steps li::marker {
+  color: var(--orange);
+  font-weight: 700;
 }

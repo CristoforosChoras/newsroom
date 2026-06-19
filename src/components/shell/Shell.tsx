@@ -9,11 +9,13 @@ import StoreHydration from "./StoreHydration";
 import Toast from "@/components/ui/Toast";
 import CellDrawer from "@/components/drawer/CellDrawer";
 import ArticleEditor from "@/components/editor/ArticleEditor";
+import TrendIdea from "@/components/trends/TrendIdea";
 import styles from "./Shell.module.css";
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const open = useNewsroom((s) => s.open);
   const editing = useNewsroom((s) => s.editing);
+  const trendIdea = useNewsroom((s) => s.trendIdea);
   const [navOpen, setNavOpen] = useState(false);
 
   // Close the mobile nav slide-over when the viewport grows to desktop.
@@ -39,6 +41,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       {open && <CellDrawer />}
       {editing && <ArticleEditor />}
+      {trendIdea && <TrendIdea />}
       <Toast />
       <StoreHydration />
     </div>
