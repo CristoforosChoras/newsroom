@@ -3,12 +3,17 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import type {
   Agent,
   Cell,
-  ColumnId,
+  CellKind,
   Gap,
   IdeaState,
   NewsroomState,
+  RadarTrend,
   Scope,
+  Stage,
   Trend,
+  TrendIdeaDraft,
+  TrendResearch,
+  TrendScope,
 } from "@/lib/types";
 import { SEED, makeCell } from "@/lib/data/seed";
 import { siteById, siteBySeoKey } from "@/lib/config/sites";
@@ -16,6 +21,7 @@ import { userById, nextWriter, pickReviewer } from "@/lib/config/team";
 import { slugify } from "@/lib/utils/slug";
 import { routeContent } from "@/lib/services/router";
 import { publishToWp } from "@/lib/services/wordpress";
+import { publishToSocial } from "@/lib/services/social";
 import { canPublish, criticalBlockers } from "@/lib/services/seoGate";
 import {
   rerouteStory,
@@ -26,18 +32,31 @@ import {
   setIdeaState as setIdeaStateSvc,
   getInbox as getInboxSvc,
   getKpi as getKpiSvc,
+  getRadarTrends as getRadarTrendsSvc,
 } from "@/lib/services/agents";
 
 interface UiState {
   open: string | null; // cell id shown in the drawer
   editing: string | null; // cell id shown in the full-screen article editor
   toast: string | null;
+  boardKind: CellKind; // active newsroom board tab (article | social)
+  // Trend Radar
+  trendScope: TrendScope; // active tab (greece | global)
+  radarTrends: RadarTrend[]; // currently loaded scope's feed
+  trendIdea: string | null; // trend id shown in the idea-generator modal
+  // Temporary (in-memory, session-only) cache of AI output per trend so it
+  // survives page navigation and the user never pays to regenerate. NOT
+  // persisted to disk → cleared on a full reload.
+  trendDrafts: Record<string, TrendIdeaDraft[]>;
+  trendResearch: Record<string, TrendResearch>;
+  trendBrands: Record<string, string[]>; // remembered brand selection per trend
 }
 
 interface Actions {
   setScope: (scope: Scope) => void;
+  setBoardKind: (kind: CellKind) => void;
   addCell: () => string;
-  move: (id: string, status: ColumnId) => void;
+  move: (id: string, status: Stage) => void;
   updateCell: (id: string, patch: Partial<Cell>) => void;
   reroute: (id: string) => Promise<void>;
   publishWP: (id: string) => Promise<void>;
@@ -45,6 +64,43 @@ interface Actions {
   runKPI: () => Promise<void>;
   scanTrends: () => Promise<void>;
   createCellFromTrend: (trend: Trend) => string;
+  // Trend Radar (Global/Greece)
+  setTrendScope: (scope: TrendScope) => void;
+  loadRadar: (scope: TrendScope, scan?: boolean) => Promise<void>;
+  openTrendIdea: (id: string) => void;
+  closeTrendIdea: () => void;
+  createCellFromRadarTrend: (trend: RadarTrend) => string;
+  // Temporary idea caches (survive navigation; not persisted)
+  cacheTrendDrafts: (trendId: string, drafts: TrendIdeaDraft[]) => void;
+  cacheTrendResearch: (trendId: string, research: TrendResearch) => void;
+  setTrendBrands: (trendId: string, ids: string[]) => void;
+  // Per-idea "Create cell" from the Trend Radar modal (routes to the right board)
+  createSocialCell: (o: {
+    platform: string;
+    headline: string;
+    caption: string;
+    hashtags?: string[];
+    site: string | null;
+    trendTitle?: string;
+  }) => string;
+  createArticleCellFromIdea: (o: {
+    headline: string;
+    body: string;
+    titles?: string[];
+    meta?: string;
+    keywords?: string[];
+    excerpt?: string;
+    event?: string;
+    sourceText?: string;
+    site: string | null;
+    trendTitle?: string;
+  }) => string;
+  // Social board transitions (Ιδέες→Σύνταξη→Έγκριση→Προγραμματισμένα→Δημοσιευμένα)
+  composeSocial: (id: string) => void;
+  submitSocialForApproval: (id: string) => void;
+  approveSocialSchedule: (id: string, whenMs: number) => void;
+  returnSocial: (id: string) => void;
+  postSocial: (id: string) => Promise<void>;
   findGaps: (scope: Scope) => Promise<void>;
   createCellFromGap: (gap: Gap) => string;
   dismissGap: (id: string) => Promise<void>;
@@ -97,8 +153,25 @@ export const useNewsroom = create<Store>()(
       open: null,
       editing: null,
       toast: null,
+      boardKind: "article",
+      trendScope: "greece",
+      radarTrends: [],
+      trendIdea: null,
+      trendDrafts: {},
+      trendResearch: {},
+      trendBrands: {},
 
       setScope: (scope) => set({ scope }),
+      setBoardKind: (kind) => set({ boardKind: kind }),
+
+      cacheTrendDrafts: (trendId, drafts) =>
+        set((s) => ({ trendDrafts: { ...s.trendDrafts, [trendId]: drafts } })),
+      cacheTrendResearch: (trendId, research) =>
+        set((s) => ({
+          trendResearch: { ...s.trendResearch, [trendId]: research },
+        })),
+      setTrendBrands: (trendId, ids) =>
+        set((s) => ({ trendBrands: { ...s.trendBrands, [trendId]: ids } })),
 
       flash: (msg) => {
         set({ toast: msg });
@@ -140,15 +213,18 @@ export const useNewsroom = create<Store>()(
 
       addCell: () => {
         const id = `c${Date.now()}`;
-        const { scope } = get();
+        const { scope, boardKind } = get();
+        const social = boardKind === "social";
         const c = makeCell({
           id,
-          headline: "Νέα ιστορία",
+          kind: boardKind,
+          headline: social ? "Νέο social post" : "Νέα ιστορία",
           source: "Editorial",
           site: scope === "all" ? null : scope,
-          status: "inbox",
+          status: social ? "idea" : "inbox",
           createdAt: Date.now(),
           event: "",
+          ...(social ? { caption: "", hashtags: [], scheduledAt: null } : {}),
         });
         set((s) => ({ cells: [c, ...s.cells], open: id }));
         return id;
@@ -370,6 +446,199 @@ export const useNewsroom = create<Store>()(
             : "Cell από trend — χρειάζεται ανάθεση",
         );
         return id;
+      },
+
+      // ── Trend Radar (Global/Greece) ──
+      setTrendScope: (scope) => set({ trendScope: scope }),
+
+      loadRadar: async (scope, scan = false) => {
+        const trends = await getRadarTrendsSvc(scope, scan);
+        if (!trends) {
+          get().flash("Trend Radar: μη διαθέσιμο (Social Radar offline)");
+          return;
+        }
+        set({ radarTrends: trends, trendScope: scope });
+        if (scan) get().flash("Trend Radar: scan ολοκληρώθηκε");
+      },
+
+      openTrendIdea: (id) => set({ trendIdea: id }),
+      closeTrendIdea: () => set({ trendIdea: null }),
+
+      // Spawn a Story Cell from a radar trend (uses the top suggested brand, else
+      // keyword-routes the title). Mirrors createCellFromTrend.
+      createCellFromRadarTrend: (trend) => {
+        const id = `c${Date.now()}`;
+        const sug = trend.suggestedBrands?.[0];
+        const routed =
+          sug && siteById(sug.site)
+            ? { site: sug.site, confidence: Math.round(sug.confidence * 100) }
+            : routeContent(trend.title);
+        const platform = (trend.platforms ?? []).join(" · ");
+        const c = makeCell({
+          id,
+          headline: trend.title,
+          source: platform ? `Trend Radar · ${platform}` : "Trend Radar",
+          site: routed.site,
+          confidence: routed.site ? routed.confidence : null,
+          status: "inbox",
+          createdAt: Date.now(),
+          event: trend.title,
+        });
+        set((s) => ({ cells: [c, ...s.cells], open: id, trendIdea: null }));
+        get().flash(
+          routed.site
+            ? `Cell από trend → ${siteById(routed.site)?.name}`
+            : "Cell από trend — χρειάζεται ανάθεση",
+        );
+        return id;
+      },
+
+      // ── Per-idea "Create cell" (Trend Radar modal) ──
+      // A single social idea → a Social-board cell at the "idea" stage; switches
+      // the newsroom to the Social board + opens the drawer (modal closes itself).
+      createSocialCell: ({ platform, headline, caption, hashtags, site, trendTitle }) => {
+        const id = `s${Date.now()}`;
+        const c = makeCell({
+          id,
+          kind: "social",
+          headline: headline || caption.slice(0, 60) || "Social post",
+          source: trendTitle ? `Trend Radar · ${trendTitle}` : "Trend Radar",
+          site,
+          status: "idea",
+          createdAt: Date.now(),
+          platform,
+          caption,
+          hashtags: hashtags ?? [],
+          scheduledAt: null,
+          trendTitle,
+        });
+        set((s) => ({
+          cells: [c, ...s.cells],
+          boardKind: "social",
+          open: id,
+          trendIdea: null,
+        }));
+        get().flash(`Social cell δημιουργήθηκε · ${platform}`);
+        return id;
+      },
+
+      // An article idea → a FULL Articles-board cell at "inbox" — populated like an
+      // AMNA-feed cell (body draft + AI title options + meta + keywords/tags), so
+      // it opens with the complete editorial toolkit (title select, editor, SEO).
+      createArticleCellFromIdea: ({
+        headline,
+        body,
+        titles,
+        meta,
+        keywords,
+        excerpt,
+        event,
+        sourceText,
+        site,
+        trendTitle,
+      }) => {
+        const id = `c${Date.now()}`;
+        // route to the brand's WP category (mirrors openEditor's normalization)
+        const s0 = siteById(site ?? null);
+        const kw = keywords && keywords.length ? keywords : [];
+        // ensure the chosen headline is among the title options (so it's selected)
+        const titleOpts = (titles && titles.length ? titles : [headline]).filter(
+          Boolean,
+        );
+        if (!titleOpts.includes(headline)) titleOpts.unshift(headline);
+        const c = makeCell({
+          id,
+          kind: "article",
+          headline,
+          source: trendTitle ? `Trend Radar · ${trendTitle}` : "Trend Radar",
+          site,
+          confidence: site ? 80 : null,
+          status: "inbox",
+          createdAt: Date.now(),
+          event: event || trendTitle || headline,
+          sourceText: sourceText || "",
+          body,
+          titles: titleOpts,
+          meta: meta || "",
+          keywords: kw,
+          tags: kw,
+          seoTitle: headline,
+          seoDesc: meta || "",
+          excerpt: excerpt || meta || "",
+          category: s0?.wpCat || "",
+          aiVersion: 1, // arrives WITH a draft, like an AMNA-feed cell
+          trendTitle,
+        });
+        set((s) => ({
+          cells: [c, ...s.cells],
+          boardKind: "article",
+          open: id,
+          trendIdea: null,
+          agents: stamp(s.agents, ["router"]),
+        }));
+        get().flash("Cell άρθρου δημιουργήθηκε (πλήρες)");
+        return id;
+      },
+
+      // ── Social board transitions (no SEO gate; lighter than the article flow) ──
+      composeSocial: (id) =>
+        set((s) => ({
+          cells: s.cells.map((c) =>
+            c.id === id ? { ...c, status: "composing" } : c,
+          ),
+        })),
+
+      submitSocialForApproval: (id) => {
+        set((s) => ({
+          cells: s.cells.map((c) =>
+            c.id === id ? { ...c, status: "approval" } : c,
+          ),
+        }));
+        get().flash("Υποβλήθηκε για έγκριση");
+      },
+
+      approveSocialSchedule: (id, whenMs) => {
+        set((s) => ({
+          cells: s.cells.map((c) =>
+            c.id === id
+              ? { ...c, status: "scheduled", scheduledAt: whenMs }
+              : c,
+          ),
+        }));
+        get().flash("Εγκρίθηκε & προγραμματίστηκε");
+      },
+
+      returnSocial: (id) => {
+        set((s) => ({
+          cells: s.cells.map((c) =>
+            c.id === id ? { ...c, status: "composing" } : c,
+          ),
+        }));
+        get().flash("Επιστράφηκε για σύνταξη");
+      },
+
+      postSocial: async (id) => {
+        const c = get().cells.find((x) => x.id === id);
+        if (!c) return;
+        set((s) => ({
+          cells: s.cells.map((x) =>
+            x.id === id ? { ...x, _publishing: true } : x,
+          ),
+        }));
+        const { postId } = await publishToSocial(c);
+        set((s) => ({
+          cells: s.cells.map((x) =>
+            x.id === id
+              ? {
+                  ...x,
+                  status: "posted",
+                  _publishing: false,
+                  promo: { wpPostId: null, social: true, newsletter: false },
+                }
+              : x,
+          ),
+        }));
+        get().flash(`Δημοσιεύτηκε στο ${c.platform ?? "social"} · ${postId}`);
       },
 
       findGaps: async (scope) => {

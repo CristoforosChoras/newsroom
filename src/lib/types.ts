@@ -18,6 +18,23 @@ export type ColumnId =
   | "review"
   | "published";
 
+// Social board — a separate lifecycle for social posts/reels. Distinct ids from
+// ColumnId so a cell's status unambiguously identifies its board + column.
+export type SocialColumnId =
+  | "idea"
+  | "composing"
+  | "approval"
+  | "scheduled"
+  | "posted";
+
+// A cell is either an "article" (long-form, WP + SEO gate) or a "social" post.
+// Missing kind = "article" everywhere (back-compat for persisted v4 cells).
+export type CellKind = "article" | "social";
+
+// Any board column id. `Cell.status` is one of these; which set is valid depends
+// on `Cell.kind` (article → ColumnId, social → SocialColumnId).
+export type Stage = ColumnId | SocialColumnId;
+
 export type Urgency = "breaking" | "standard" | "evergreen";
 export type Status = "green" | "amber" | "red";
 export type Scope = "all" | string; // "all" | site id
@@ -51,7 +68,14 @@ export interface Cell {
   confidence: number | null; // routing confidence 0-100
   routeReason: string;
   urgency: Urgency;
-  status: ColumnId;
+  status: Stage;
+  kind?: CellKind; // missing = "article" (back-compat); "social" → Social board
+  // social-cell fields (kind === "social"; optional → article cells omit them):
+  platform?: string; // instagram / tiktok / x / facebook / reel …
+  caption?: string; // the post body
+  hashtags?: string[];
+  scheduledAt?: number | null; // when "Έγκριση & Προγραμματισμός" set a time
+  trendTitle?: string; // provenance: the radar trend this idea came from
   createdAt: number;
   slaDeadline: number | null;
   event: string; // raw event description (router + draft input)
@@ -266,4 +290,58 @@ export interface NewsroomState {
   siteKpi: Record<string, SiteKpi>;
   seo: SeoState;
   network: NetworkState;
+}
+
+// ── Trend Radar (unfiltered Global/Greece feed + per-brand idea generator) ──
+export type TrendScope = "greece" | "global";
+
+export interface RadarTrend {
+  id: string;
+  scope: TrendScope;
+  category: string; // topic bucket (sports/politics/entertainment/…)
+  title: string;
+  entities: { type: string; name: string }[];
+  platforms: string[];
+  sources: string[];
+  thumbnail: string | null;
+  metric: { kind: string; value: number };
+  demand: number;
+  velocity: number;
+  recency: number;
+  crossPlatform: number;
+  score: number;
+  lifecycle: TrendLifecycle;
+  sampledAt: number;
+  suggestedBrands: { site: string; confidence: number; reason: string }[];
+}
+
+export interface GeneratedIdeas {
+  socialPosts: { platform: string; hook: string; caption: string; hashtags: string[] }[];
+  article: {
+    headline: string;
+    outline: string[];
+    draft: string;
+    // richer SEO package (optional → old cached drafts / template fallback omit
+    // them; the FE derives fallbacks so the article cell is always "full").
+    seoTitles?: string[]; // alternative titles to choose from
+    meta?: string; // 150–160 char meta description
+    keywords?: string[]; // LSI keywords / tags
+  };
+  shortVideo: { hook: string; script: string };
+}
+
+export interface TrendIdeaDraft {
+  id: string;
+  trendId: string;
+  profileId: string;
+  ideas: GeneratedIdeas;
+  createdAt: number;
+}
+
+export interface TrendResearch {
+  whyTrending: string;
+  entityType: "person" | "event" | "product" | "place" | "other";
+  summary: string;
+  sources: { title: string; url: string }[];
+  researchedAt: number;
 }

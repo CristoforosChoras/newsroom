@@ -1,5 +1,5 @@
-import Trends from "@/components/trends/Trends";
+import TrendRadar from "@/components/trends/TrendRadar";
 
 export default function Page() {
-  return <Trends />;
+  return <TrendRadar />;
 }

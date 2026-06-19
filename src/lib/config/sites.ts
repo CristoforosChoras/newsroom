@@ -1,4 +1,4 @@
-import type { Site, Vertical, ColumnId } from "@/lib/types";
+import type { Site, Vertical, ColumnId, SocialColumnId, CellKind, Stage } from "@/lib/types";
 
 /**
  * The real OnlyGroup network (6 portals, per the sportal.gr footer):
@@ -191,6 +191,8 @@ export const siteById = (id: string | null | undefined): Site | undefined =>
 export const siteBySeoKey = (key: string | null | undefined): Site | undefined =>
   SITES.find((s) => s.seoKey === key);
 
+// Article board (default) — the 5-stage editorial flow. Kept named COLUMNS for
+// back-compat; new code should prefer columnsFor(kind).
 export const COLUMNS: { id: ColumnId; label: string }[] = [
   { id: "inbox", label: "Inbox" },
   { id: "assigned", label: "Ανατέθηκε" },
@@ -198,3 +200,24 @@ export const COLUMNS: { id: ColumnId; label: string }[] = [
   { id: "review", label: "Review" },
   { id: "published", label: "Published" },
 ];
+
+// Social board — Ιδέες → Σύνταξη → Έγκριση → Προγραμματισμένα → Δημοσιευμένα.
+export const SOCIAL_COLUMNS: { id: SocialColumnId; label: string }[] = [
+  { id: "idea", label: "Ιδέες" },
+  { id: "composing", label: "Σύνταξη" },
+  { id: "approval", label: "Έγκριση" },
+  { id: "scheduled", label: "Προγραμματισμένα" },
+  { id: "posted", label: "Δημοσιευμένα" },
+];
+
+// The columns for a board kind (missing kind = article, for persisted cells).
+export function columnsFor(kind: CellKind | undefined): { id: Stage; label: string }[] {
+  return kind === "social" ? SOCIAL_COLUMNS : COLUMNS;
+}
+
+// Label for a single stage, regardless of board.
+export function stageLabel(status: Stage): string {
+  return (
+    [...COLUMNS, ...SOCIAL_COLUMNS].find((c) => c.id === status)?.label ?? ""
+  );
+}

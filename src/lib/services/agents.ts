@@ -4,12 +4,16 @@ import type {
   Idea,
   IdeaState,
   NetworkState,
+  RadarTrend,
   RetroIssue,
   RetroOffender,
   Scope,
   SiteKpi,
   Status,
   Trend,
+  TrendIdeaDraft,
+  TrendResearch,
+  TrendScope,
 } from "@/lib/types";
 import { VERTICALS, siteById } from "@/lib/config/sites";
 import { routeContent } from "@/lib/services/router";
@@ -341,5 +345,64 @@ export async function runAmnaIngest(): Promise<boolean> {
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+/* ──────────────────── Trend Radar (Global/Greece) ──────────────────── */
+
+// Unfiltered trend feed for a scope. scan=true forces a recompute (slower);
+// default GET reads the stored feed. Returns null on failure (no mock).
+export async function getRadarTrends(
+  scope: TrendScope,
+  scan = false,
+): Promise<RadarTrend[] | null> {
+  try {
+    const res = await fetch(`/api/agents/trend-radar?scope=${scope}`, {
+      method: scan ? "POST" : "GET",
+    });
+    if (!res.ok) throw new Error(`trend-radar ${res.status}`);
+    const data = (await res.json()) as RadarTrend[];
+    return Array.isArray(data) ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+// Research WHY a trend is trending now (Claude web search) → reason + sources.
+export async function researchTrend(trendId: string): Promise<TrendResearch | null> {
+  try {
+    const res = await fetch("/api/agents/trend-research", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ trendId }),
+    });
+    if (!res.ok) throw new Error(`trend-research ${res.status}`);
+    const data = (await res.json()) as { research: TrendResearch | null };
+    return data.research ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Generate per-brand content ideas (Claude), grounded in the trend's research.
+// Returns the drafts + the research context used (or null on failure).
+export async function generateTrendIdeas(
+  trendId: string,
+  profileIds: string[],
+): Promise<{ drafts: TrendIdeaDraft[]; research: TrendResearch | null } | null> {
+  try {
+    const res = await fetch("/api/agents/trend-idea", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ trendId, profileIds }),
+    });
+    if (!res.ok) throw new Error(`trend-idea ${res.status}`);
+    const data = (await res.json()) as {
+      drafts: TrendIdeaDraft[];
+      research: TrendResearch | null;
+    };
+    return { drafts: data.drafts ?? [], research: data.research ?? null };
+  } catch {
+    return null;
   }
 }

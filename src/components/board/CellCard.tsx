@@ -4,6 +4,7 @@ import { Globe, RefreshCw } from "lucide-react";
 import type { Cell } from "@/lib/types";
 import { evaluateGate } from "@/lib/services/seoGate";
 import { userById, initials } from "@/lib/config/team";
+import { dateTimeShort } from "@/lib/utils/time";
 import { T } from "@/lib/config/strings";
 import SiteTag from "@/components/ui/SiteTag";
 import SlaClock from "@/components/ui/SlaClock";
@@ -18,8 +19,10 @@ interface CellCardProps {
 
 export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProps) {
   const busy = c._routing || c._drafting || c._publishing;
-  // Show the SEO gate dot once a cell has a draft to check (not for raw intake).
-  const showGate = c.status === "ai_draft" || c.status === "review";
+  const isSocial = c.kind === "social";
+  // Show the SEO gate dot once an ARTICLE cell has a draft to check (social
+  // cells have no SEO gate).
+  const showGate = !isSocial && (c.status === "ai_draft" || c.status === "review");
   const gate = showGate ? evaluateGate(c) : null;
   return (
     <div
@@ -30,6 +33,9 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
     >
       <div className={styles.head}>
         <SiteTag id={c.site} small />
+        {isSocial && c.platform && (
+          <span className={styles.platform}>{c.platform}</span>
+        )}
         {c.urgency === "breaking" && (
           <span className={styles.breaking}>{T.card.breaking}</span>
         )}
@@ -78,7 +84,9 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
       <div className={styles.foot}>
         <Globe size={11} />
         {c.source}
-        {c.wpPostId ? (
+        {isSocial && c.scheduledAt ? (
+          <span className={styles.wp}>{dateTimeShort(c.scheduledAt)}</span>
+        ) : c.wpPostId ? (
           <span className={styles.wp}>{T.card.wp(c.wpPostId)}</span>
         ) : gate ? (
           <span

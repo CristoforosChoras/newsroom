@@ -10,7 +10,7 @@ import {
   Shuffle,
   User,
 } from "lucide-react";
-import { COLUMNS, siteById } from "@/lib/config/sites";
+import { columnsFor, siteById } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
 import { T } from "@/lib/config/strings";
 import Button from "@/components/ui/Button";
@@ -20,6 +20,8 @@ import styles from "./Board.module.css";
 export default function Board() {
   const scope = useNewsroom((s) => s.scope);
   const cellsAll = useNewsroom((s) => s.cells);
+  const boardKind = useNewsroom((s) => s.boardKind);
+  const setBoardKind = useNewsroom((s) => s.setBoardKind);
   const move = useNewsroom((s) => s.move);
   const addCell = useNewsroom((s) => s.addCell);
   const pullInbox = useNewsroom((s) => s.pullInbox);
@@ -28,6 +30,8 @@ export default function Board() {
   const dragId = useRef<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [mine, setMine] = useState(false);
+  const isSocial = boardKind === "social";
+  const columns = columnsFor(boardKind);
 
   // slide one stage at a time (snap handles the rest); swipe/trackpad still work
   const slide = (dir: -1 | 1) => {
@@ -38,8 +42,11 @@ export default function Board() {
     el.scrollBy({ left: dir * step, behavior: "smooth" });
   };
 
+  const byKind = cellsAll.filter(
+    (c) => (c.kind ?? "article") === boardKind,
+  );
   const scoped =
-    scope === "all" ? cellsAll : cellsAll.filter((c) => c.site === scope);
+    scope === "all" ? byKind : byKind.filter((c) => c.site === scope);
   const cells = mine
     ? scoped.filter(
         (c) => c.assignee === currentUser || c.reviewer === currentUser,
@@ -48,18 +55,38 @@ export default function Board() {
 
   return (
     <div className={styles.board}>
+      <div className={styles.kindTabs}>
+        <button
+          className={[styles.kindTab, !isSocial ? styles.kindTabOn : ""]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={() => setBoardKind("article")}
+        >
+          {T.board.kindArticle}
+        </button>
+        <button
+          className={[styles.kindTab, isSocial ? styles.kindTabOn : ""]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={() => setBoardKind("social")}
+        >
+          {T.board.kindSocial}
+        </button>
+      </div>
       <div className={styles.toolbar}>
         <Button icon={Plus} variant="ghost" small onClick={addCell}>
-          {T.board.newCell}
+          {isSocial ? T.board.newSocial : T.board.newCell}
         </Button>
-        <Button
-          icon={Newspaper}
-          variant="soft"
-          small
-          onClick={() => void pullInbox()}
-        >
-          {T.board.pullAmna}
-        </Button>
+        {!isSocial && (
+          <Button
+            icon={Newspaper}
+            variant="soft"
+            small
+            onClick={() => void pullInbox()}
+          >
+            {T.board.pullAmna}
+          </Button>
+        )}
         <Button
           icon={User}
           variant={mine ? "soft" : "ghost"}
@@ -92,7 +119,7 @@ export default function Board() {
       </div>
 
       <div className={styles.columns} ref={scrollerRef}>
-        {COLUMNS.map((col) => {
+        {columns.map((col) => {
           const list = cells.filter((c) => c.status === col.id);
           return (
             <div
@@ -107,7 +134,7 @@ export default function Board() {
               <div className={styles.colHead}>
                 <span className={styles.colLabel}>{col.label}</span>
                 <span className={styles.colCount}>{list.length}</span>
-                {col.id === "published" && (
+                {(col.id === "published" || col.id === "posted") && (
                   <CheckCircle2
                     size={13}
                     color="var(--green)"
