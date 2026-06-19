@@ -16,18 +16,17 @@
   place-items: center;
   width: 22px;
   height: 22px;
+  padding: 0;
+  line-height: 0;
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--panel-2);
   color: var(--dim);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.12s;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
   z-index: 2;
-}
-
-.card:hover .delBtn {
-  opacity: 1;
 }
 
 .delBtn:hover {
