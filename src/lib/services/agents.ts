@@ -1,8 +1,10 @@
 import type {
   Cell,
+  Finality,
   Gap,
   Idea,
   IdeaState,
+  KpiFlags,
   NetworkState,
   RadarTrend,
   RetroIssue,
@@ -254,6 +256,12 @@ export interface KpiResult {
   siteKpi: Record<string, SiteKpi>;
   network: NetworkState;
   generatedAt: number;
+  // enriched snapshot metadata (optional → back-compat with older webhook builds)
+  lastUpdated?: number;
+  windows?: string[];
+  defaultWindow?: string;
+  flags?: KpiFlags;
+  finalityByWindow?: Record<string, Finality>;
 }
 
 // Real KPI metrics from /api/agents/kpi (proxies the n8n KPI agent: GA4 pageviews

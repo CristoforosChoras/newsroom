@@ -12,6 +12,11 @@ interface KpiPayload {
   siteKpi: Record<string, SiteKpi>;
   network: NetworkState;
   generatedAt?: number;
+  lastUpdated?: number;
+  windows?: string[];
+  defaultWindow?: string;
+  flags?: { sampled: boolean; thresholded: boolean };
+  finalityByWindow?: Record<string, "preliminary" | "final">;
 }
 
 function toFeId(site: string): string {
@@ -48,7 +53,19 @@ async function fetchKpi() {
     ...a,
     site: toFeId(a.site),
   }));
-  return { ok: true as const, payload: { siteKpi, network, generatedAt: raw.generatedAt ?? 0 } };
+  return {
+    ok: true as const,
+    payload: {
+      siteKpi,
+      network,
+      generatedAt: raw.generatedAt ?? 0,
+      lastUpdated: raw.lastUpdated ?? raw.generatedAt ?? 0,
+      windows: raw.windows ?? ["today", "7d", "28d"],
+      defaultWindow: raw.defaultWindow ?? "7d",
+      flags: raw.flags ?? { sampled: false, thresholded: false },
+      finalityByWindow: raw.finalityByWindow ?? {},
+    },
+  };
 }
 
 async function handle() {

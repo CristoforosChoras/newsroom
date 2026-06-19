@@ -190,6 +190,115 @@
   color: var(--faint);
 }
 
+/* KPI window picker + freshness bar */
+.kpiBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.windowPicker {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.winTab {
+  border: none;
+  background: transparent;
+  color: var(--dim);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 5px 13px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.winTabOn {
+  background: var(--accent);
+  color: #0a0a0b;
+}
+
+.freshness {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.finBadge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-radius: 5px;
+  padding: 2px 7px;
+  cursor: help;
+}
+
+.finPrelim {
+  color: var(--amber);
+  border: 1px solid color-mix(in srgb, var(--amber) 40%, transparent);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+}
+
+.finFinal {
+  color: var(--green);
+  border: 1px solid color-mix(in srgb, var(--green) 40%, transparent);
+  background: color-mix(in srgb, var(--green) 12%, transparent);
+}
+
+.updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.warnPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--amber) 8%, transparent);
+}
+
+/* acquisition / landing rows */
+.acqRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+.acqRow:first-of-type {
+  border-top: none;
+}
+
+.acqName {
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acqVal {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text);
+}
+
 /* seo */
 .seoStatus {
   display: flex;

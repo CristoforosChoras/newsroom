@@ -31,6 +31,7 @@ import {
   findGaps as findGapsSvc,
   setIdeaState as setIdeaStateSvc,
   getInbox as getInboxSvc,
+  runAmnaIngest as runAmnaIngestSvc,
   getKpi as getKpiSvc,
   getRadarTrends as getRadarTrendsSvc,
 } from "@/lib/services/agents";
@@ -39,6 +40,7 @@ interface UiState {
   open: string | null; // cell id shown in the drawer
   editing: string | null; // cell id shown in the full-screen article editor
   toast: string | null;
+  kpiWindow: string; // active KPI window ("today" | "7d" | "28d")
   boardKind: CellKind; // active newsroom board tab (article | social)
   // Trend Radar
   trendScope: TrendScope; // active tab (greece | global)
@@ -55,6 +57,7 @@ interface UiState {
 interface Actions {
   setScope: (scope: Scope) => void;
   setBoardKind: (kind: CellKind) => void;
+  setKpiWindow: (w: string) => void;
   addCell: () => string;
   move: (id: string, status: Stage) => void;
   updateCell: (id: string, patch: Partial<Cell>) => void;
@@ -153,6 +156,7 @@ export const useNewsroom = create<Store>()(
       open: null,
       editing: null,
       toast: null,
+      kpiWindow: "7d",
       boardKind: "article",
       trendScope: "greece",
       radarTrends: [],
@@ -163,6 +167,7 @@ export const useNewsroom = create<Store>()(
 
       setScope: (scope) => set({ scope }),
       setBoardKind: (kind) => set({ boardKind: kind }),
+      setKpiWindow: (w) => set({ kpiWindow: w }),
 
       cacheTrendDrafts: (trendId, drafts) =>
         set((s) => ({ trendDrafts: { ...s.trendDrafts, [trendId]: drafts } })),
@@ -375,12 +380,24 @@ export const useNewsroom = create<Store>()(
           return;
         }
         const sites = Object.values(k.siteKpi);
-        const totalViews = sites.reduce((n, s) => n + (s.views || 0), 0);
+        // Prefer the backend's clean network total (7d window) over re-summing rows.
+        const net7d = k.network.byWindow?.["7d"]?.totals?.screenPageViews;
+        const totalViews =
+          net7d ?? sites.reduce((n, s) => n + (s.views || 0), 0);
         const totalArticles = sites.reduce((n, s) => n + (s.articles || 0), 0);
         const line = `Δίκτυο: ${(totalViews / 1000).toFixed(1)}K προβολές, ${totalArticles} άρθρα σε ${sites.length} portals.`;
+        const kpiMeta = {
+          generatedAt: k.generatedAt || Date.now(),
+          lastUpdated: k.lastUpdated ?? k.generatedAt ?? Date.now(),
+          windows: k.windows ?? ["today", "7d", "28d"],
+          defaultWindow: k.defaultWindow ?? "7d",
+          flags: k.flags ?? { sampled: false, thresholded: false },
+          finalityByWindow: k.finalityByWindow ?? {},
+        };
         set((s) => ({
           siteKpi: k.siteKpi,
           network: k.network,
+          kpiMeta,
           reports: [
             {
               id: `kpi-${Date.now()}`,
@@ -698,11 +715,16 @@ export const useNewsroom = create<Store>()(
         get().flash(ok ? "Ευκαιρία απορρίφθηκε" : "Η απόρριψη δεν αποθηκεύτηκε");
       },
 
-      // Pull ingested wire (ΑΠΕ-ΜΠΕ) cells from the backend into the board. Each
-      // payload is already routed + rewritten; we dedup on originalId so re-pulling
-      // never duplicates, then prepend the new ones (status from the payload, e.g.
-      // ai_draft). Returns how many new cells landed.
+      // Pull ingested wire (ΑΠΕ-ΜΠΕ) cells from the backend into the board.
+      // ALWAYS triggers a live crawl first, then reads the freshest rows — so the
+      // manual button reflects the latest AMNA feed regardless of the background
+      // schedule/cadence. Dedup on originalId so re-pulling never duplicates.
+      // Returns how many new cells landed.
       pullInbox: async () => {
+        get().flash("ΑΠΕ-ΜΠΕ: λήψη των τελευταίων…");
+        // Crawl live (best-effort): even if the crawl is slow/aborts we still read
+        // whatever landed. This is what makes the button always fetch the latest.
+        await runAmnaIngestSvc();
         const incoming = await getInboxSvc();
         if (!incoming) {
           get().flash("ΑΠΕ-ΜΠΕ: μη διαθέσιμο (backend offline)");
@@ -976,6 +998,7 @@ export const useNewsroom = create<Store>()(
           siteKpi: s.siteKpi,
           seo: s.seo,
           network: s.network,
+          kpiMeta: s.kpiMeta,
         }) as NewsroomState,
     },
   ),

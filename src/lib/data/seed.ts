@@ -59,6 +59,7 @@ export const SEED: NewsroomState = {
     topArticles: [],
   },
   siteKpi: {},
+  kpiMeta: null,
   // SEO Health fills only from a real generated report (Reports → Χθεσινή).
   seo: {
     status: "green",

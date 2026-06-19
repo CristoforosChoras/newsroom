@@ -5,11 +5,7 @@ import { Bot, Play, Shuffle } from "lucide-react";
 import { useNewsroom } from "@/lib/store/useNewsroom";
 import { timeHM } from "@/lib/utils/time";
 import { T } from "@/lib/config/strings";
-import {
-  getAmnaConfig,
-  setAmnaInterval,
-  runAmnaIngest,
-} from "@/lib/services/agents";
+import { getAmnaConfig, setAmnaInterval } from "@/lib/services/agents";
 import Panel from "@/components/ui/Panel";
 import Button from "@/components/ui/Button";
 import styles from "./Agents.module.css";
@@ -63,9 +59,10 @@ export default function Agents() {
     router: () => {
       void pullInbox(); // routing happens during AMNA ingestion
     },
+    // Crawl AMNA live + pull the latest onto the board (pullInbox now triggers
+    // the crawl itself, so this always fetches fresh — never just the stale table).
     ingest: async () => {
-      const ok = await runAmnaIngest();
-      flash(ok ? T.agents.runStarted : T.agents.runFailed);
+      await pullInbox();
     },
     seo: () => runSeoRetro(),
     kpi: () => runKPI(), // no GA4 backend → flashes "εκκρεμεί"

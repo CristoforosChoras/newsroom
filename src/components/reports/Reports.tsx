@@ -34,8 +34,13 @@ const dayKey = (ts: number): string => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 };
 
-const fmtViews = (v: number): string =>
-  v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(v);
+const fmtViews = (v: number): string => {
+  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
+  return v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(Math.round(v));
+};
+
+// A site's 7d window metrics (enriched snapshots); falls back to legacy fields.
+const win7 = (v: SiteKpi) => v.byWindow?.["7d"];
 
 function DeltaPill({ d }: { d: number }) {
   const up = d >= 0;
@@ -61,56 +66,79 @@ function KpiReport({ r, scope }: { r: Report; scope: string }) {
     );
   }
   let rows = Object.entries(r.kpi.siteKpi).sort(
-    (a, b) => b[1].views - a[1].views,
+    (a, b) => (win7(b[1])?.screenPageViews ?? b[1].views) - (win7(a[1])?.screenPageViews ?? a[1].views),
   ) as [string, SiteKpi][];
   if (scope !== "all") rows = rows.filter(([id]) => id === scope);
   if (rows.length === 0) {
     return <div className={styles.bodyRow}>{T.reports.noSiteData}</div>;
   }
-  const totalViews = rows.reduce((n, [, v]) => n + v.views, 0);
-  const totalArticles = rows.reduce((n, [, v]) => n + v.articles, 0);
+  const sum = (f: (v: SiteKpi) => number) => rows.reduce((n, [, v]) => n + f(v), 0);
+  const totalViews = sum((v) => win7(v)?.screenPageViews ?? v.views);
+  const totalUsers = sum((v) => win7(v)?.activeUsers ?? 0); // approximate (non-deduped)
+  const totalSessions = sum((v) => win7(v)?.sessions ?? 0);
+  const totalConv = sum((v) => win7(v)?.keyEvents ?? 0);
   const showFooter = scope === "all" && rows.length > 1;
+  const net7 = r.kpi.network.byWindow?.["7d"];
   const top = (r.kpi.network.topArticles ?? []).filter(
     (a) => scope === "all" || a.site === scope,
   );
   return (
     <>
+      <div className={styles.kpiCaption}>
+        {T.kpi.windows["7d"]} ·{" "}
+        <span className={styles.prelimTag} title={T.kpi.prelimHelp}>
+          {T.kpi.preliminary}
+        </span>
+      </div>
       <table className={styles.kpiTable}>
         <thead>
           <tr>
             <th>{T.reports.colPortal}</th>
-            <th className={styles.num}>{T.reports.colToday}</th>
+            <th className={styles.num}>{T.reports.colUsers}</th>
+            <th className={styles.num}>{T.reports.colSessions}</th>
+            <th className={styles.num}>{T.reports.colViews}</th>
+            <th className={styles.num}>{T.reports.colConversions}</th>
             <th className={styles.num}>{T.reports.colVsYesterday}</th>
-            <th className={styles.num}>{T.reports.colArticles}</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map(([id, v]) => (
-            <tr key={id}>
-              <td>
-                <SiteTag id={id} small />
-              </td>
-              <td className={styles.num}>{fmtViews(v.views)}</td>
-              <td className={styles.num}>
-                <DeltaPill d={v.delta} />
-              </td>
-              <td className={styles.num}>{v.articles}</td>
-            </tr>
-          ))}
+          {rows.map(([id, v]) => {
+            const m = win7(v);
+            return (
+              <tr key={id}>
+                <td>
+                  <SiteTag id={id} small />
+                </td>
+                <td className={styles.num}>{fmtViews(m?.activeUsers ?? 0)}</td>
+                <td className={styles.num}>{fmtViews(m?.sessions ?? 0)}</td>
+                <td className={styles.num}>{fmtViews(m?.screenPageViews ?? v.views)}</td>
+                <td className={styles.num}>{fmtViews(m?.keyEvents ?? 0)}</td>
+                <td className={styles.num}>
+                  <DeltaPill d={(m?.deltas?.screenPageViews ?? v.delta) || 0} />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
         {showFooter && (
           <tfoot>
             <tr>
               <td>{T.reports.networkRow}</td>
+              <td className={styles.num} title={T.kpi.approxUsers}>
+                ≈ {fmtViews(totalUsers)}
+              </td>
+              <td className={styles.num}>{fmtViews(totalSessions)}</td>
               <td className={styles.num}>{fmtViews(totalViews)}</td>
+              <td className={styles.num}>{fmtViews(totalConv)}</td>
               <td className={styles.num}>
-                {r.kpi.network.delta != null ? (
+                {net7?.deltas?.screenPageViews != null ? (
+                  <DeltaPill d={net7.deltas.screenPageViews} />
+                ) : r.kpi.network.delta != null ? (
                   <DeltaPill d={r.kpi.network.delta} />
                 ) : (
                   "—"
                 )}
               </td>
-              <td className={styles.num}>{totalArticles}</td>
             </tr>
           </tfoot>
         )}

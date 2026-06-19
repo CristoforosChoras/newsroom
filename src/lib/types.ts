@@ -255,13 +255,62 @@ export interface Agent {
   desc: string;
 }
 
+// ── GA4 KPI (accurate, matches the GA4 Reports UI) ──
+export type Finality = "preliminary" | "final";
+export interface KpiFlags {
+  sampled: boolean;
+  thresholded: boolean;
+}
+// One window's headline metrics for a site (from a dimensionless GA4 total query).
+export interface KpiMetrics {
+  activeUsers: number;
+  newUsers: number;
+  sessions: number;
+  engagedSessions: number;
+  engagementRate: number; // 0..1
+  screenPageViews: number;
+  keyEvents: number;
+  avgEngagementTime: number; // seconds
+  conversionRate: number; // keyEvents / sessions
+  deltas: Record<string, number>; // % vs previous equal-length period, per metric
+  finality: Finality;
+}
+export interface KpiSeriesPoint {
+  date: string; // YYYYMMDD
+  screenPageViews: number;
+  sessions: number;
+  activeUsers: number;
+  finality: Finality;
+}
+export interface KpiChannel {
+  channel: string;
+  sessions: number;
+  activeUsers?: number;
+}
+export interface KpiTopPage {
+  title: string;
+  path: string;
+  views: number;
+}
+export interface KpiLanding {
+  landingPage: string;
+  sessions: number;
+}
+
 export interface SiteKpi {
-  views: number; // pageviews TODAY (matches GA4 "today")
+  views: number; // pageviews TODAY (back-compat; = today screenPageViews)
   views7d?: number; // 7-day total (context)
-  delta: number; // % today vs yesterday
+  delta: number; // % today vs yesterday (back-compat; = 7d screenPageViews delta)
   articles: number;
   seo: Status;
   wp: boolean;
+  // ── enriched GA4 fields (optional → back-compat with old/empty snapshots) ──
+  byWindow?: Record<string, KpiMetrics>; // "today" | "7d" | "28d"
+  series?: Record<string, KpiSeriesPoint[]>; // per window (7d, 28d)
+  channels?: Record<string, KpiChannel[]>;
+  topPages?: Record<string, KpiTopPage[]>;
+  topLanding?: Record<string, KpiLanding[]>;
+  timezone?: string; // property timezone (from GA4 metadata)
 }
 
 export interface SeoState {
@@ -271,12 +320,40 @@ export interface SeoState {
   actions: string[];
 }
 
+// Network rollup for one window. Summable metrics sum cleanly across properties;
+// activeUsers/newUsers do NOT (a person on two sites counts twice) → "approx".
+export interface NetworkWindow {
+  totals: {
+    sessions: number;
+    screenPageViews: number;
+    keyEvents: number;
+    engagedSessions: number;
+  };
+  activeUsersApprox: number;
+  newUsersApprox: number;
+  deltas: Record<string, number>;
+  finality: Finality;
+}
+
 export interface NetworkState {
-  week: { d: string; v: number }[]; // daily network pageviews (in K)
+  week: { d: string; v: number; date?: string; finality?: Finality }[]; // daily network pageviews (in K)
   sources: { s: string; p: number }[];
   topArticles: { t: string; v: number; site: string }[];
   delta?: number; // network % today vs yesterday
   today?: number; // network pageviews today (raw)
+  // ── enriched (optional → back-compat) ──
+  byWindow?: Record<string, NetworkWindow>;
+  channels?: { channel: string; sessions: number }[]; // network acquisition (7d)
+}
+
+// Snapshot-level KPI metadata (freshness + flags), surfaced in the dashboard.
+export interface KpiMeta {
+  generatedAt: number;
+  lastUpdated: number;
+  windows: string[]; // e.g. ["today","7d","28d"]
+  defaultWindow: string;
+  flags: KpiFlags;
+  finalityByWindow: Record<string, Finality>;
 }
 
 export interface NewsroomState {
@@ -290,6 +367,7 @@ export interface NewsroomState {
   siteKpi: Record<string, SiteKpi>;
   seo: SeoState;
   network: NetworkState;
+  kpiMeta: KpiMeta | null; // freshness + sampling/threshold flags (null until first run)
 }
 
 // ── Trend Radar (unfiltered Global/Greece feed + per-brand idea generator) ──

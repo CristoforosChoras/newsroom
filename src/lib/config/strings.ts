@@ -85,13 +85,15 @@ export const T = {
       glossary: "Γλωσσάρι",
     },
     pageDocsToggle: "Πώς δουλεύει & γιατί",
+    howHeading: "Πώς δουλεύει & γιατί",
+    tutorialHeading: "Πώς να το χρησιμοποιήσεις",
   },
 
   topbar: {
     openMenu: "Άνοιγμα μενού",
     allNetwork: "Όλο το δίκτυο",
     viewAsDev: "Προβολή ως (dev)",
-    pullAmna: "Λήψη ΑΠΕ-ΜΠΕ",
+    pullAmna: "Λήψη feed",
     updateNetwork: "Ενημέρωση δικτύου",
   },
 
@@ -132,10 +134,45 @@ export const T = {
     seoLabel: { green: "Υγιές", amber: "Προσοχή", red: "Κρίσιμο" } as const,
   },
 
+  kpi: {
+    windows: { today: "Σήμερα", "7d": "7 ημέρες", "28d": "28 ημέρες" } as Record<string, string>,
+    vsPrev: "vs προηγ. περίοδο",
+    preliminary: "Προσωρινά",
+    final: "Οριστικά",
+    prelimHelp:
+      "Προσωρινά στοιχεία: το GA4 επεξεργάζεται δεδομένα για ~24–72 ώρες, οπότε αριθμοί που περιλαμβάνουν σήμερα/χθες μπορεί να αλλάξουν. Ανανεώνονται αυτόματα κάθε ώρα μέχρι να οριστικοποιηθούν και να ταιριάξουν με το GA4.",
+    finalHelp:
+      "Οριστικά στοιχεία: δεν αλλάζουν πια (ημέρες παλαιότερες από ~2 ημέρες, πλήρως επεξεργασμένες από το GA4).",
+    updated: (t: string) => `Ενημερώθηκε ${t}`,
+    sampledWarn:
+      "⚠ Δειγματοληψία (sampling): οι αριθμοί είναι εκτίμηση, όχι ακριβείς — δες λιγότερο εύρος/τμηματοποίηση.",
+    threshWarn:
+      "⚠ Όρια ταυτότητας (thresholding / «(other)»): ορισμένες αναλύσεις είναι μερικές.",
+    approxUsers: "≈ άθροισμα, όχι μοναδικοί χρήστες (ένας σε 2 sites μετριέται 2×)",
+    naNetwork: "—",
+    acquisition: "Κανάλια επισκεψιμότητας",
+    topPages: "Κορυφαίες σελίδες",
+    topLanding: "Σελίδες εισόδου",
+    channelCol: "Κανάλι",
+    sessionsCol: "Συνεδρίες",
+    viewsCol: "Προβολές",
+    metrics: {
+      activeUsers: "Ενεργοί χρήστες",
+      newUsers: "Νέοι χρήστες",
+      sessions: "Συνεδρίες",
+      engagedSessions: "Συνεδρίες με αλληλεπίδραση",
+      engagementRate: "Ποσοστό αλληλεπίδρασης",
+      avgEngagementTime: "Μέσος χρόνος αλληλεπίδρασης",
+      screenPageViews: "Προβολές σελίδων",
+      keyEvents: "Βασικά συμβάντα",
+      conversionRate: "Ποσοστό μετατροπής",
+    } as Record<string, string>,
+  },
+
   board: {
     newCell: "New cell",
     newSocial: "Νέο social",
-    pullAmna: "Λήψη ΑΠΕ-ΜΠΕ",
+    pullAmna: "Λήψη feed",
     mine: "Τα δικά μου",
     kindArticle: "Άρθρα",
     kindSocial: "Social",
@@ -294,6 +331,10 @@ export const T = {
     colToday: "Σήμερα",
     colVsYesterday: "vs χθες",
     colArticles: "Άρθρα",
+    colUsers: "Χρήστες",
+    colSessions: "Συνεδρίες",
+    colViews: "Προβολές",
+    colConversions: "Μετατροπές",
     networkRow: "Δίκτυο",
     topArticles: "Top άρθρα",
     auditedVolume: (audited: number, published: number) =>

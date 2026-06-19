@@ -267,6 +267,26 @@
 }
 
 /* ── KPI report table ── */
+.kpiCaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+  margin-bottom: 4px;
+}
+
+.prelimTag {
+  color: var(--amber);
+  border: 1px solid color-mix(in srgb, var(--amber) 40%, transparent);
+  border-radius: 5px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: help;
+}
+
 .kpiTable {
   width: 100%;
   border-collapse: collapse;

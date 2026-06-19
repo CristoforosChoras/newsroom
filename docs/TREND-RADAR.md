@@ -1,9 +1,17 @@
 # Trend Radar
 
 A continuous trend-intelligence feed: it scans the open internet/social platforms for what's
-trending **right now** (NOT limited to our accounts), split into **GLOBAL** and **GREECE** tabs.
-Clicking a trend opens a popup that generates ready-to-use content ideas/drafts (social post,
-article angle, reel script) conditioned on each of our **brand profiles**, via Claude.
+trending **right now** (NOT limited to our accounts), split into **GLOBAL** and **GREECE** tabs,
+filterable by **category** (sports/politics/entertainment/…). Clicking a trend opens a popup that
+(optionally) **researches why it's trending now** and generates ready-to-use content ideas/drafts
+(social posts, full article, reel script) conditioned on each of our **brand profiles**, via Claude.
+
+Each generated idea has a **"Create cell"** button that drops it straight into the Newsroom —
+social posts/reel → the **Social** board, the article → the **Articles** board (fully populated:
+title options, meta, keywords/tags, body) — then navigates you there. See
+[NEWSROOM.md](./NEWSROOM.md) for the two boards. The generated drafts + research are **cached
+per-trend in the browser** (in-memory, session-only) so navigating away and back never loses them
+and you never pay Claude twice.
 
 It is built on top of the existing **Social Radar** service (it reuses the connector layer,
 clustering, scoring and SQLite store) by adding an **unfiltered, geo-scoped** path parallel to the
@@ -11,19 +19,36 @@ brand-filtered Ideas/Gaps engine. (Supersedes the earlier n8n Trend Radar, which
 
 ## Architecture
 ```
-Connectors (per scope) → normalize → cluster → score → Trend[]            (social-radar)
-   GET /trends?scope=greece|global              POST /trends/:id/generate (Claude)
-                         │                                  │
-   matrix-newsroom: /api/agents/trend-radar      /api/agents/trend-idea   (secret proxies)
-                         │                                  │
-   /trends page: TrendRadar (Global|Greece tabs) → card click → TrendIdea modal
+Connectors (per scope) → normalize → cluster → score → classify category → Trend[]   (social-radar)
+   GET /trends?scope=greece|global   POST /trends/:id/research   POST /trends/:id/generate (Claude)
+                  │                            │                            │
+   matrix-newsroom: /api/agents/trend-radar  /api/agents/trend-research  /api/agents/trend-idea
+                  │                            │                            │  (secret proxies)
+   /trends page: TrendRadar (Global|Greece tabs + category chips) → card → TrendIdea modal
+                                              │                            │
+                              "Έρευνα" (why trending + sources)   "Δημιουργία ιδεών" → per-idea
+                                                                  "Create cell" → Newsroom board
 ```
 - **Ingestion**: `social-radar` `POST /scan` runs both the brand-filtered Ideas board AND the
   unfiltered Trend Radar for both scopes; the daily cron + boot seed keep it fresh.
+- **Research-then-generate**: `POST /trends/:id/generate` first runs (and caches) research so the
+  ideas are grounded in real, current facts (guardrail: a negative/somber event never yields promo
+  ideas). `POST /trends/:id/research` can also be run on its own from the modal's **"Έρευνα"** button
+  (Claude `web_search`), returning `whyTrending`, `entityType`, a summary and **sources**.
 - **DB (SQLite)** tables: `trends` (latest feed per scope), `trend_history` (velocity across runs),
-  `drafts` (generated ideas), plus existing `samples`/`board`/`idea_state`.
+  `drafts` (generated ideas), `research` (per-trend why-trending cache), plus existing
+  `samples`/`board`/`idea_state`.
 - **No relevance gate**: unlike Ideas, trends are NOT discarded for being off-brand. `suggestedBrands`
   on each trend is advisory (which of our brands could use it).
+
+## Generated ideas → article cell (full SEO package)
+The generator returns, per brand: `socialPosts[]`, `shortVideo`, and an **`article`** with
+`headline`, `outline`, `draft`, plus **`seoTitles[]`, `meta`, `keywords[]`** (defaulted for back-compat
+with older cached drafts). When you press **"Create cell"** on the article idea, the Newsroom builds a
+complete Articles-board cell — title options (from `seoTitles`), meta/excerpt, keywords→tags, an HTML
+body (outline as H2 + draft), `aiVersion: 1` — i.e. it arrives ready to edit, exactly like an AMNA
+wire cell. Social posts/reel become **Social-board** cells at the `idea` stage with platform + caption
++ hashtags pre-filled.
 
 ## Sources — live vs paid
 | Source | Status | Greece | Global | Key |
@@ -71,7 +96,10 @@ output on the selected profile(s). The FE modal lists brands from `matrix-newsro
 ## Reset / ops
 - Recompute now: `POST /scan` (or the FE "Ανανέωση" button → `POST /api/agents/trend-radar?scope=`).
 - Reset the feed: clear the `trends` / `trend_history` tables (the next scan rebuilds them).
-- Generation is on-demand per click (Claude); scanning Google Trends/YouTube is free/cheap.
+- Reset research/ideas: clear the `research` / `drafts` tables (re-run from the modal).
+- Generation & research are on-demand per click (Claude); scanning Google Trends/YouTube is free/cheap.
+- The FE caches generated drafts + research per-trend **in memory only** (cleared on a full reload),
+  so it never re-calls Claude just because you switched tabs.
 
 ## Deploy
 The new endpoints (`/trends`, `/trends/:id/generate`) and pipeline live in `social-radar`. **Deploy

@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 
-// Server-only proxy that manually kicks the n8n "AMNA Ingest" crawl (the Kick
-// webhook). The crawl runs ~3 min and the webhook stays open until it finishes,
-// so we fire it and return immediately — n8n keeps executing server-side after we
-// disconnect (the same async behaviour behind its Cloudflare 524). We just need
-// the request to land. Env: N8N_AMNA_RUN_WEBHOOK_URL + N8N_SEO_SECRET.
+// Server-only proxy that runs the n8n "AMNA Newsfeed" crawl (the Kick webhook)
+// and WAITS for it to finish. The Kick webhook responds at its last node (after
+// the upsert), so awaiting it means the amna_cells table is fresh by the time we
+// return — letting the caller immediately read the latest. We cap the wait so a
+// rare cold-start crawl can't hang the request: on timeout we still report
+// accepted (whatever was saved before the cutoff is already readable).
+// Env: N8N_AMNA_RUN_WEBHOOK_URL + N8N_SEO_SECRET.
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 90;
 
 export async function POST() {
   const url = process.env.N8N_AMNA_RUN_WEBHOOK_URL;
@@ -17,23 +20,24 @@ export async function POST() {
       { status: 502 },
     );
   }
-  // Give the request enough time to reach n8n and start the run, then stop
-  // waiting — the crawl continues on the n8n side regardless of this timeout.
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 4000);
+  const t = setTimeout(() => ctrl.abort(), 85000);
   try {
-    await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json", "x-matrix-secret": secret },
       body: JSON.stringify({ source: "manual" }),
       cache: "no-store",
       signal: ctrl.signal,
     });
+    // completed=true means the crawl pipeline finished server-side; the caller
+    // can read the fresh table right away.
+    return NextResponse.json({ accepted: true, completed: res.ok });
   } catch {
-    // AbortError (expected) or transient network error — the run has already
-    // been accepted by n8n. Surface nothing fatal; the inbox refreshes later.
+    // AbortError (slow cold-start crawl) or transient network error — the run was
+    // accepted; the caller still reads whatever landed.
+    return NextResponse.json({ accepted: true, completed: false });
   } finally {
     clearTimeout(t);
   }
-  return NextResponse.json({ accepted: true });
 }

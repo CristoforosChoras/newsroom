@@ -25,6 +25,23 @@ docs are English.
 - **No mock data**: services return real data or `null` on failure (the store
   then flashes an offline notice). The seed state is intentionally empty.
 
+## Key features
+
+- **Two-board Newsroom** (`/newsroom`): **Άρθρα** (Inbox→Ανάθεση→AI Draft→Review→
+  Δημοσιευμένο, SEO gate) and **Social** (Ιδέες→Σύνταξη→Έγκριση→Προγραμματισμένα→
+  Δημοσιευμένα). A `Cell.kind` discriminator drives kind-aware columns/drawer/card.
+- **Trend Radar** (`/trends`): Global/Greece feed + category filter, per-trend
+  "why trending" research (Claude web search), and per-brand idea generation whose
+  ideas each get a **"Create cell"** into the matching board.
+- **Live AMNA pull**: "Λήψη feed" crawls the wire live, then reads — always the latest.
+
+## In-app & repo docs
+
+- Every page has a **"Πώς δουλεύει & γιατί"** panel (header toggle) with a
+  **"Πώς να το χρησιμοποιήσεις"** step-by-step tutorial (`src/lib/config/pageDocs.ts`).
+- Deeper guides live in the repo `docs/`: `NEWSROOM.md`, `TREND-RADAR.md`,
+  `AMNA-NEWSFEED.md`, `SOCIAL-RADAR.md`, `SEO-AGENT.md`, `DEPLOY-VERCEL.md`.
+
 ## How this Storybook is organized
 
 - **UI/** — reusable presentational primitives (Button, Panel, Stat, SiteTag…),

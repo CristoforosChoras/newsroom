@@ -92,8 +92,11 @@ update `Load Existing` to read the new store (see §5).
   `trend_config.amna_interval_min` (set it from the **Agents page** minutes input, or
   edit the row directly). `0` / empty = manual-only. The Schedule node ticks every
   5 min and the *Cadence Gate* fires a run once per interval window — so the smallest
-  effective interval is 5 min. To bypass the gate entirely, point the Schedule node
-  straight at `Load Existing` and set its own interval.
+  effective interval is 5 min.
+- **Cadence Gate (slot-based):** the gate matches an exact 5-min slot —
+  `slot = floor(minutesSinceMidnight / 5)`, fires when `slot % round(interval/5) === 0`.
+  This is robust for **any** interval (incl. long ones like 340 min); the earlier
+  `minutes % interval < 5` version opened a fuzzy window that tick-jitter could miss.
 
 ---
 
@@ -131,3 +134,25 @@ reappear on the next run.
 - A manual kick may return a Cloudflare **502/“no response”** if the run outlasts the
   webhook sync window — that's expected; the run completes server-side (check the
   execution list).
+
+---
+
+## 7. Manual "Λήψη feed" — always fetches the latest
+
+The **"Λήψη feed"** button (on the Newsroom board, the Topbar, and the Agents page)
+no longer just reads the table — it does a **live crawl, then reads**:
+
+```
+pullInbox()  →  POST /api/agents/amna-run  (Kick webhook; WAITS for the crawl to finish)
+             →  POST /api/agents/amna-inbox (reads the freshest amna_cells rows)
+             →  dedup by originalId  →  prepend new cells to the Articles board
+```
+
+- The **Kick** webhook responds at its last node (after the upsert), so by the time the
+  pull returns, `amna_cells` is fresh. `amna-run/route.ts` awaits it (cap 85s,
+  `maxDuration = 90`); on a rare slow cold-start it still reads whatever already landed.
+- This makes the manual pull **independent of the schedule/cadence** — it always reflects
+  the live AMNA feed. (Previously a long/idle cadence meant the table was stale and the
+  pull reported "καμία νέα είδηση" even when AMNA had new articles.)
+- The background Schedule + Cadence Gate remain for hands-off auto-refresh; the manual
+  button is the on-demand "get latest now" path.

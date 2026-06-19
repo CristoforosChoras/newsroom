@@ -41,11 +41,22 @@ export default function PageDocs() {
 
       {open && (
         <div className={styles.panel}>
+          <div className={styles.sectionTitle}>{T.shell.howHeading}</div>
           <ul className={styles.list}>
             {doc.how.map((line, i) => (
               <li key={i}>{line}</li>
             ))}
           </ul>
+          {doc.steps && doc.steps.length > 0 && (
+            <>
+              <div className={styles.sectionTitle}>{T.shell.tutorialHeading}</div>
+              <ol className={styles.steps}>
+                {doc.steps.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ol>
+            </>
+          )}
         </div>
       )}
     </div>
