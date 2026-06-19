@@ -86,9 +86,6 @@ export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProp
             style={{ marginLeft: "auto" }}
           />
         )}
-        {c.confidence != null && !busy && (
-          <span className={styles.confidence}>{c.confidence}%</span>
-        )}
       </div>
       <div className={styles.headline}>{c.headline}</div>
 
