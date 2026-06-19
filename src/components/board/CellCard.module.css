@@ -7,17 +7,17 @@
   cursor: pointer;
   transition:
     border-color 0.15s,
-    transform 0.15s;
+    padding-top 0.15s;
 }
 
 .delBtn {
   position: absolute;
-  top: 7px;
+  top: 6px;
   right: 7px;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--panel-2);
@@ -37,9 +37,11 @@
   border-color: var(--red);
 }
 
+/* on hover, push the content down so the trash button gets its own space at the
+   top (no overlap of the head row) and the top border stays visible. */
 .card:hover {
   border-color: var(--orange-line);
-  transform: translateY(-1px);
+  padding-top: 32px;
 }
 
 /* cells created from a Trend Radar trend — distinct accent */
