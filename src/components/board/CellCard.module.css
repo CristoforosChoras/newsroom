@@ -5,9 +5,7 @@
   border-radius: 11px;
   padding: 12px;
   cursor: pointer;
-  transition:
-    border-color 0.15s,
-    padding-top 0.15s;
+  transition: border-color 0.15s;
 }
 
 .delBtn {
@@ -37,11 +35,8 @@
   border-color: var(--red);
 }
 
-/* on hover, push the content down so the trash button gets its own space at the
-   top (no overlap of the head row) and the top border stays visible. */
 .card:hover {
   border-color: var(--orange-line);
-  padding-top: 32px;
 }
 
 /* cells created from a Trend Radar trend — distinct accent */
@@ -68,6 +63,7 @@
   align-items: center;
   gap: 6px;
   margin-bottom: 8px;
+  padding-right: 22px; /* reserve room for the hover delete button (no reflow) */
 }
 
 .breaking {
