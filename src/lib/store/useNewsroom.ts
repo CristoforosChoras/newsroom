@@ -250,9 +250,14 @@ export const useNewsroom = create<Store>()(
       move: (id, status) => {
         const cell = get().cells.find((x) => x.id === id);
         if (!cell || status === cell.status) return;
-        // Article cells must be assigned before they can change lane (social cells
-        // have no assignee and move freely through their own pipeline).
-        if ((cell.kind ?? "article") !== "social" && !cell.assignee) {
+        // Article cells must be assigned before they can move FORWARD (social
+        // cells have no assignee and move freely). Sending a card back to Inbox is
+        // always allowed, so an unassigned/stuck cell can be recovered.
+        if (
+          (cell.kind ?? "article") !== "social" &&
+          !cell.assignee &&
+          status !== "inbox"
+        ) {
           get().flash("Ανάθεσε πρώτα συντάκτη για αλλαγή σταδίου");
           return;
         }

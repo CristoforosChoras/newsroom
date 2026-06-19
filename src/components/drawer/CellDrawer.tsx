@@ -353,6 +353,31 @@ export default function CellDrawer() {
             )}
           </Eyebrow>
 
+          {/* recovery: an article cell past Inbox with no assignee can be assigned
+              in place (older/persisted cells), so it never gets stuck. */}
+          {!c.assignee && c.status !== "inbox" && (
+            <div className={styles.stageActions}>
+              <div className={styles.hintAmber}>{T.drawer.needsAssignee}</div>
+              <Button icon={UserPlus} onClick={() => assign(c.id)}>
+                {T.drawer.autoAssign}
+              </Button>
+              {writers.length > 0 && (
+                <select
+                  className={styles.picker}
+                  value=""
+                  onChange={(e) => e.target.value && assign(c.id, e.target.value)}
+                >
+                  <option value="">{T.drawer.pickWriter}</option>
+                  {writers.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
           {c.status === "inbox" && (
             <div className={styles.stageActions}>
               <Button icon={UserPlus} onClick={() => assign(c.id)}>

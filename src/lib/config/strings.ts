@@ -207,6 +207,7 @@ export const T = {
     originalSummary:
       "Πρωτότυπο κείμενο · αναφορά μόνο (δημοσιεύεται το διασκευασμένο κείμενο)",
     flow: (stage: string) => `Ροή · ${stage}`,
+    needsAssignee: "Χωρίς συντάκτη — ανάθεσε για να συνεχίσει.",
     autoAssign: "Αυτόματη ανάθεση",
     pickWriter: "Επιλογή συντάκτη…",
     writer: (name: string) => `Συντάκτης: ${name}`,
