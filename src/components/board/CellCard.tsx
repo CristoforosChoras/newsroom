@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, RefreshCw } from "lucide-react";
+import { Globe, RefreshCw, TrendingUp } from "lucide-react";
 import type { Cell } from "@/lib/types";
 import { evaluateGate } from "@/lib/services/seoGate";
 import { userById, initials } from "@/lib/config/team";
@@ -20,19 +20,28 @@ interface CellCardProps {
 export default function CellCard({ cell: c, onDragStart, onClick }: CellCardProps) {
   const busy = c._routing || c._drafting || c._publishing;
   const isSocial = c.kind === "social";
+  // cells spawned from a Trend Radar trend are marked (distinct accent + badge)
+  const fromTrend = !!c.trendTitle || (c.source?.startsWith("Trend Radar") ?? false);
   // Show the SEO gate dot once an ARTICLE cell has a draft to check (social
   // cells have no SEO gate).
   const showGate = !isSocial && (c.status === "ai_draft" || c.status === "review");
   const gate = showGate ? evaluateGate(c) : null;
   return (
     <div
-      className={styles.card}
+      className={[styles.card, fromTrend ? styles.fromTrend : ""]
+        .filter(Boolean)
+        .join(" ")}
       draggable
       onDragStart={onDragStart}
       onClick={onClick}
     >
       <div className={styles.head}>
         <SiteTag id={c.site} small />
+        {fromTrend && (
+          <span className={styles.trendBadge} title={c.trendTitle || "Trend Radar"}>
+            <TrendingUp size={10} /> Trend
+          </span>
+        )}
         {isSocial && c.platform && (
           <span className={styles.platform}>{c.platform}</span>
         )}

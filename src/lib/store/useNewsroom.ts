@@ -52,6 +52,7 @@ interface UiState {
   trendDrafts: Record<string, TrendIdeaDraft[]>;
   trendResearch: Record<string, TrendResearch>;
   trendBrands: Record<string, string[]>; // remembered brand selection per trend
+  usedTrends: string[]; // trend ids that produced a cell → marked (NOT removed) in the feed
 }
 
 interface Actions {
@@ -77,6 +78,7 @@ interface Actions {
   cacheTrendDrafts: (trendId: string, drafts: TrendIdeaDraft[]) => void;
   cacheTrendResearch: (trendId: string, research: TrendResearch) => void;
   setTrendBrands: (trendId: string, ids: string[]) => void;
+  markTrendUsed: (trendId: string) => void;
   // Per-idea "Create cell" from the Trend Radar modal (routes to the right board)
   createSocialCell: (o: {
     platform: string;
@@ -164,6 +166,7 @@ export const useNewsroom = create<Store>()(
       trendDrafts: {},
       trendResearch: {},
       trendBrands: {},
+      usedTrends: [],
 
       setScope: (scope) => set({ scope }),
       setBoardKind: (kind) => set({ boardKind: kind }),
@@ -177,6 +180,12 @@ export const useNewsroom = create<Store>()(
         })),
       setTrendBrands: (trendId, ids) =>
         set((s) => ({ trendBrands: { ...s.trendBrands, [trendId]: ids } })),
+      markTrendUsed: (trendId) =>
+        set((s) =>
+          s.usedTrends.includes(trendId)
+            ? {}
+            : { usedTrends: [...s.usedTrends, trendId] },
+        ),
 
       flash: (msg) => {
         set({ toast: msg });
@@ -500,8 +509,16 @@ export const useNewsroom = create<Store>()(
           status: "inbox",
           createdAt: Date.now(),
           event: trend.title,
+          trendTitle: trend.title, // marks the board cell as trend-originated
         });
-        set((s) => ({ cells: [c, ...s.cells], open: id, trendIdea: null }));
+        set((s) => ({
+          cells: [c, ...s.cells],
+          open: id,
+          trendIdea: null,
+          usedTrends: s.usedTrends.includes(trend.id)
+            ? s.usedTrends
+            : [...s.usedTrends, trend.id],
+        }));
         get().flash(
           routed.site
             ? `Cell από trend → ${siteById(routed.site)?.name}`
@@ -999,6 +1016,7 @@ export const useNewsroom = create<Store>()(
           seo: s.seo,
           network: s.network,
           kpiMeta: s.kpiMeta,
+          usedTrends: s.usedTrends,
         }) as NewsroomState,
     },
   ),

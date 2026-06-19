@@ -55,6 +55,27 @@
   transform: translateY(-2px);
 }
 
+/* a trend that already produced a cell — marked (not removed) */
+.usedWrap {
+  opacity: 0.9;
+}
+
+.usedCard {
+  border-color: color-mix(in srgb, var(--green) 45%, var(--line)) !important;
+  background: color-mix(in srgb, var(--green) 7%, transparent);
+}
+
+.usedTag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--green);
+  border: 1px solid color-mix(in srgb, var(--green) 40%, transparent);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
 .cardHead {
   display: flex;
   align-items: center;

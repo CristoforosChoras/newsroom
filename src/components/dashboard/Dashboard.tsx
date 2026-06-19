@@ -242,10 +242,9 @@ export default function Dashboard() {
               ) : null}
             </div>
           </div>
-          {(flags?.sampled || flags?.thresholded) && (
+          {flags?.sampled && (
             <Panel className={styles.warnPanel}>
-              {flags?.sampled && <div>{T.kpi.sampledWarn}</div>}
-              {flags?.thresholded && <div>{T.kpi.threshWarn}</div>}
+              <div>{T.kpi.sampledWarn}</div>
             </Panel>
           )}
 

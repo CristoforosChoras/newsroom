@@ -54,6 +54,7 @@ export const T = {
     researchFailed: "Η έρευνα δεν επέστρεψε αποτέλεσμα",
     copied: "Αντιγράφηκε",
     copy: "Αντιγραφή",
+    used: "σε χρήση",
     socialPost: "Social post",
     article: "Άρθρο",
     reel: "Reel / Short",

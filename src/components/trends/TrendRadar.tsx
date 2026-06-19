@@ -23,6 +23,7 @@ export default function TrendRadar() {
   const setScope = useNewsroom((s) => s.setTrendScope);
   const loadRadar = useNewsroom((s) => s.loadRadar);
   const openTrendIdea = useNewsroom((s) => s.openTrendIdea);
+  const usedTrends = useNewsroom((s) => s.usedTrends);
   const [loading, setLoading] = useState(false);
   const [cat, setCat] = useState("all");
 
@@ -103,9 +104,15 @@ export default function TrendRadar() {
         {shown.length === 0 && (
           <div className={styles.empty}>{loading ? T.radar.loading : T.radar.empty}</div>
         )}
-        {shown.map((t) => (
-          <div key={t.id} className={styles.cardWrap} onClick={() => openTrendIdea(t.id)}>
-            <Panel>
+        {shown.map((t) => {
+          const used = usedTrends.includes(t.id);
+          return (
+          <div
+            key={t.id}
+            className={[styles.cardWrap, used ? styles.usedWrap : ""].filter(Boolean).join(" ")}
+            onClick={() => openTrendIdea(t.id)}
+          >
+            <Panel className={used ? styles.usedCard : undefined}>
               <div className={styles.cardHead}>
                 <span className={styles.category}>{catLabel(t.category)}</span>
                 {t.platforms.map((p) => (
@@ -113,6 +120,7 @@ export default function TrendRadar() {
                     {p}
                   </span>
                 ))}
+                {used && <span className={styles.usedTag}>✓ {T.radar.used}</span>}
                 <span className={styles.score}>{t.score}</span>
               </div>
               <div className={styles.topic}>{t.title}</div>
@@ -139,7 +147,8 @@ export default function TrendRadar() {
               </div>
             </Panel>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

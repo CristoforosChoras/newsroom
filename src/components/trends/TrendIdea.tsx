@@ -20,6 +20,7 @@ export default function TrendIdea() {
   const createCell = useNewsroom((s) => s.createCellFromRadarTrend);
   const createSocialCell = useNewsroom((s) => s.createSocialCell);
   const createArticleCellFromIdea = useNewsroom((s) => s.createArticleCellFromIdea);
+  const markTrendUsed = useNewsroom((s) => s.markTrendUsed);
   const flash = useNewsroom((s) => s.flash);
   // AI output is cached in the store (per trend) so it survives page navigation
   // and the user never pays to regenerate after creating a cell.
@@ -77,6 +78,7 @@ export default function TrendIdea() {
     site: string,
   ) => {
     createSocialCell({ platform, headline, caption, hashtags, site, trendTitle: trend.title });
+    markTrendUsed(trend.id);
     router.push("/newsroom");
   };
   const goArticle = (
@@ -113,6 +115,7 @@ export default function TrendIdea() {
       site,
       trendTitle: trend.title,
     });
+    markTrendUsed(trend.id);
     router.push("/newsroom");
   };
 
