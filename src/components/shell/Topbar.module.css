@@ -61,6 +61,25 @@
   gap: 9px;
 }
 
+.logout {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-radius: var(--radius-sm);
+  color: var(--dim);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.logout:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
 .menuBtn {
   display: none;
   width: 40px;

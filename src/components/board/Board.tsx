@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { columnsFor, siteById } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { useCan } from "@/lib/store/useAuth";
 import { T } from "@/lib/config/strings";
 import Button from "@/components/ui/Button";
 import CellCard from "./CellCard";
@@ -27,6 +28,7 @@ export default function Board() {
   const pullInbox = useNewsroom((s) => s.pullInbox);
   const openCell = useNewsroom((s) => s.openCell);
   const currentUser = useNewsroom((s) => s.currentUser);
+  const can = useCan();
   const dragId = useRef<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [mine, setMine] = useState(false);
@@ -74,10 +76,13 @@ export default function Board() {
         </button>
       </div>
       <div className={styles.toolbar}>
-        <Button icon={Plus} variant="ghost" small onClick={addCell}>
-          {isSocial ? T.board.newSocial : T.board.newCell}
-        </Button>
-        {!isSocial && (
+        {/* UX gating: creating cells/ingesting requires the matching permission */}
+        {can("drafts.create") && (
+          <Button icon={Plus} variant="ghost" small onClick={addCell}>
+            {isSocial ? T.board.newSocial : T.board.newCell}
+          </Button>
+        )}
+        {!isSocial && can("newsroom.manage") && (
           <Button
             icon={Newspaper}
             variant="soft"

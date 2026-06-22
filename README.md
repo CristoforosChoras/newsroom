@@ -24,6 +24,89 @@ npm run dev      # http://localhost:3000
 npm run build && npm run start
 ```
 
+## Auth & roles (DUMMY identity, real RBAC)
+
+Login + role-based access control. The **identity provider is a mock** (no real
+password check) — but the roles, permissions, route guards, and UI gating are
+real and final. Only the mock provider is swapped for real auth later, at **one
+documented place**.
+
+📖 **Full guide — architecture, how to use, file map, real-auth swap:** [`docs/AUTH-RBAC.md`](docs/AUTH-RBAC.md).
+In-app, the **Χρήστες (`/users`)** screen has its own "Πώς δουλεύει & γιατί" panel.
+
+> ⚠️ **SECURITY CAVEAT — these checks are UX only, NOT security.** The mock does
+> not verify passwords and the session token is fake. Anyone can edit
+> `localStorage` (`auth-v1`) to grant themselves any role. **Real security MUST be
+> enforced server-side** once real auth is added (see the swap checklist below).
+> Hiding a button does not protect the underlying action.
+
+### How to log in
+
+Visit any page → you're redirected to `/login`. Pick a demo user (or type the
+email) and submit — **any password is accepted**. Switch roles live without
+re-login via the **dev identity switcher** in the topbar (separate from the team
+"view as" switcher, which controls content-workflow assignment).
+
+| Demo email | Role | Sees / can do |
+|---|---|---|
+| `admin@matrix.gr` | **Admin** | Everything, incl. User Management & settings |
+| `editor@matrix.gr` | **Editor** | Runs the newsroom: manage, generate, run, create/approve/publish drafts. No user management |
+| `journalist@matrix.gr` | **Journalist** | View newsroom, generate trends, run competition, create drafts, view analytics. No approve/publish, no users |
+| `analyst@matrix.gr` | **Analyst** | Read-only on content; view + export analytics, view competition |
+| `viewer@matrix.gr` | **Viewer** | `*.view` only — fully read-only |
+
+### Role → permission matrix (single source of truth)
+
+Defined once in **`src/lib/config/permissions.ts`** (`ROLE_PERMISSIONS`). Roles and
+the matrix are trivially editable there. The **Admin → Χρήστες (`/users`)** screen
+can also override the matrix and reassign roles at runtime (persisted in the auth
+store); nav and guards read those overrides live.
+
+| Permission | Admin | Editor | Journalist | Analyst | Viewer |
+|---|:-:|:-:|:-:|:-:|:-:|
+| `newsroom.view` | ✓ | ✓ | ✓ |  | ✓ |
+| `newsroom.manage` | ✓ | ✓ |  |  |  |
+| `trends.view` | ✓ | ✓ | ✓ |  | ✓ |
+| `trends.generate` | ✓ | ✓ | ✓ |  |  |
+| `competition.view` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `competition.run` | ✓ | ✓ | ✓ |  |  |
+| `analytics.view` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `analytics.export` | ✓ |  |  | ✓ |  |
+| `drafts.create` | ✓ | ✓ | ✓ |  |  |
+| `drafts.approve` | ✓ | ✓ |  |  |  |
+| `drafts.publish` | ✓ | ✓ |  |  |  |
+| `users.view` | ✓ |  |  |  |  |
+| `users.manage` | ✓ |  |  |  |  |
+| `settings.manage` | ✓ |  |  |  |  |
+
+Routes are gated by `ROUTE_PERMISSIONS` in the same file. Enforcement is **client
+-side only** for now: `<ProtectedRoute>` (`src/components/auth/ProtectedRoute.tsx`)
+redirects unauthenticated users to `/login` and shows a clean "no access" state
+for disallowed routes; the sidebar hides nav items the role can't reach; and
+action buttons (create/approve/publish, generate, run) are hidden via the
+`useCan()` hook.
+
+### The single swap point (mock → real auth)
+
+All app code talks to the `AuthProvider` interface and the `authProvider`
+singleton from `@/lib/auth` — never to the mock directly.
+
+**At swap time, change:**
+1. **`src/lib/auth/index.ts`** — replace `new MockAuthProvider()` with the real
+   provider (JWT/OAuth/our backend). One line. This is the only identity edit.
+2. Add **`src/proxy.ts`** (Next.js 16 renamed Middleware → **Proxy**) to verify
+   the session cookie and redirect unauthenticated requests server-side.
+3. Add a Data Access Layer `verifySession()` and call it in every
+   `src/app/api/agents/*/route.ts` handler — **the real enforcement layer** —
+   returning 401/403 before doing any work.
+4. Make `getSession()`/`getCurrentUser()` hit the real backend and re-validate the
+   token on rehydrate.
+
+**Stays unchanged:** `src/lib/config/permissions.ts` (roles, matrix, route map),
+the `useAuth` store, the `useAuth`/`useCan`/`useHasRole` hooks, `<ProtectedRoute>`,
+the sidebar nav filter, and all UI gating — they depend on the interface, not the
+mock, so they survive the swap untouched.
+
 ## The backend seam (where the next iteration plugs in)
 
 All network-bound work goes through `src/lib/services/` and is **stubbed today**.

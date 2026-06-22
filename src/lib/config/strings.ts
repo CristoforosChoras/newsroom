@@ -84,6 +84,7 @@ export const T = {
       reports: "Reports",
       agents: "Agents",
       glossary: "Γλωσσάρι",
+      users: "Χρήστες",
     },
     pageDocsToggle: "Πώς δουλεύει & γιατί",
     howHeading: "Πώς δουλεύει & γιατί",
@@ -493,5 +494,42 @@ export const T = {
   routing: {
     noClearVertical:
       "Δεν εντοπίστηκε καθαρό vertical — προτείνεται χειροκίνητη επιβεβαίωση.",
+  },
+
+  // Auth + RBAC (mock identity, real roles/permissions). UX-only — see README.
+  auth: {
+    brand: "MATRIX",
+    brandSub: "NEWSROOM CORE",
+    loginTitle: "Σύνδεση",
+    loginSubtitle: "Διάλεξε έναν demo χρήστη ή γράψε το email του.",
+    emailLabel: "Email",
+    emailPlaceholder: "name@matrix.gr",
+    passwordLabel: "Κωδικός",
+    passwordPlaceholder: "οποιοσδήποτε (mock)",
+    signIn: "Είσοδος",
+    signInFailed: "Άγνωστος χρήστης — διάλεξε από τη λίστα.",
+    demoUsersTitle: "Demo χρήστες",
+    demoHint: "Κλικ σε χρήστη για συμπλήρωση · δεν ελέγχεται κωδικός.",
+    mockCaveat:
+      "⚠ Mock σύνδεση — χωρίς πραγματικό έλεγχο. Η ασφάλεια επιβάλλεται server-side όταν μπει το πραγματικό auth.",
+    logout: "Αποσύνδεση",
+    loginAs: "Σύνδεση ως (dev)",
+    // no-access state
+    noAccessTitle: "Χωρίς πρόσβαση",
+    noAccessBody: "Ο ρόλος σου δεν έχει δικαίωμα σε αυτή τη σελίδα.",
+    backToDashboard: "Επιστροφή στο Dashboard",
+    loading: "Έλεγχος πρόσβασης…",
+    // user management
+    usersTitle: "Διαχείριση χρηστών",
+    usersIntro:
+      "Δες τους χρήστες, άλλαξε ρόλους και ρύθμισε τι βλέπει κάθε ρόλος. Λειτουργεί σε mock δεδομένα.",
+    colUser: "Χρήστης",
+    colEmail: "Email",
+    colRole: "Ρόλος",
+    matrixTitle: "Δικαιώματα ανά ρόλο",
+    matrixIntro:
+      "Τσέκαρε τι μπορεί να κάνει κάθε ρόλος. Οι αλλαγές εφαρμόζονται άμεσα σε μενού και κουμπιά.",
+    resetMatrix: "Επαναφορά προεπιλογών",
+    matrixOverridden: "Τροποποιημένος πίνακας (όχι προεπιλογές)",
   },
 } as const;

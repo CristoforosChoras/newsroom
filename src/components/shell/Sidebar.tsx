@@ -10,24 +10,35 @@ import {
   FileText,
   Bot,
   BookOpen,
+  Users,
   Radio,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SITES } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { useCan } from "@/lib/store/useAuth";
 import { T } from "@/lib/config/strings";
+import type { Permission } from "@/lib/config/permissions";
 import StatusLight from "@/components/ui/StatusLight";
 import styles from "./Sidebar.module.css";
 
-const NAV: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/", label: T.shell.nav.dashboard, icon: LayoutDashboard },
-  { href: "/newsroom", label: T.shell.nav.newsroom, icon: Newspaper },
-  { href: "/trends", label: T.shell.nav.trends, icon: TrendingUp },
-  { href: "/gaps", label: T.shell.nav.gaps, icon: Swords },
-  { href: "/reports", label: T.shell.nav.reports, icon: FileText },
-  { href: "/agents", label: T.shell.nav.agents, icon: Bot },
-  { href: "/glossary", label: T.shell.nav.glossary, icon: BookOpen },
+// `permission` mirrors ROUTE_PERMISSIONS in config/permissions.ts. Entries the
+// current role can't access are filtered out below. null = any authenticated user.
+const NAV: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  permission: Permission | null;
+}[] = [
+  { href: "/", label: T.shell.nav.dashboard, icon: LayoutDashboard, permission: "analytics.view" },
+  { href: "/newsroom", label: T.shell.nav.newsroom, icon: Newspaper, permission: "newsroom.view" },
+  { href: "/trends", label: T.shell.nav.trends, icon: TrendingUp, permission: "trends.view" },
+  { href: "/gaps", label: T.shell.nav.gaps, icon: Swords, permission: "competition.view" },
+  { href: "/reports", label: T.shell.nav.reports, icon: FileText, permission: "analytics.view" },
+  { href: "/agents", label: T.shell.nav.agents, icon: Bot, permission: "settings.manage" },
+  { href: "/glossary", label: T.shell.nav.glossary, icon: BookOpen, permission: null },
+  { href: "/users", label: T.shell.nav.users, icon: Users, permission: "users.view" },
 ];
 
 interface SidebarProps {
@@ -38,6 +49,9 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const siteKpi = useNewsroom((s) => s.siteKpi);
+  const can = useCan();
+  // hide nav items the current role can't access (UX gating; not security)
+  const nav = NAV.filter((n) => !n.permission || can(n.permission));
 
   return (
     <>
@@ -65,7 +79,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         <nav className={styles.nav}>
-          {NAV.map((n) => {
+          {nav.map((n) => {
             const active = pathname === n.href;
             return (
               <Link

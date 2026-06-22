@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Swords, Sparkles, ExternalLink, AlertTriangle, RefreshCw } from "lucide-react";
 import { SITES } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { useCan } from "@/lib/store/useAuth";
 import { T } from "@/lib/config/strings";
 import { dateTimeShort } from "@/lib/utils/time";
 import Panel from "@/components/ui/Panel";
@@ -29,6 +30,7 @@ export default function Gaps() {
   const findingsMap = useNewsroom((s) => s.competitionFindings);
   const activeId = useNewsroom((s) => s.activeCompetitionRunId);
   const flash = useNewsroom((s) => s.flash);
+  const can = useCan();
 
   const [urlsText, setUrlsText] = useState("");
   const [windowHours, setWindowHours] = useState(72);
@@ -139,11 +141,14 @@ export default function Gaps() {
           })}
         </div>
 
-        <div className={styles.actions}>
-          <Button icon={Swords} loading={busy || inFlight} onClick={() => void analyze()}>
-            {T.competition.analyze}
-          </Button>
-        </div>
+        {/* UX gating: running a competition analysis requires competition.run */}
+        {can("competition.run") && (
+          <div className={styles.actions}>
+            <Button icon={Swords} loading={busy || inFlight} onClick={() => void analyze()}>
+              {T.competition.analyze}
+            </Button>
+          </div>
+        )}
       </Panel>
 
       {/* active run */}

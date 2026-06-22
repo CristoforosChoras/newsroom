@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, ExternalLink, Plus, Search, Sparkles, X } from "lucide-react";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { useCan } from "@/lib/store/useAuth";
 import { SITES } from "@/lib/config/sites";
 import { generateTrendIdeas, researchTrend } from "@/lib/services/agents";
 import { T } from "@/lib/config/strings";
@@ -22,6 +23,7 @@ export default function TrendIdea() {
   const createArticleCellFromIdea = useNewsroom((s) => s.createArticleCellFromIdea);
   const markTrendUsed = useNewsroom((s) => s.markTrendUsed);
   const flash = useNewsroom((s) => s.flash);
+  const can = useCan();
   // AI output is cached in the store (per trend) so it survives page navigation
   // and the user never pays to regenerate after creating a cell.
   const drafts = useNewsroom((s) => (s.trendIdea ? s.trendDrafts[s.trendIdea] : undefined)) ?? [];
@@ -179,12 +181,17 @@ export default function TrendIdea() {
             })}
           </div>
           <div className={styles.actions}>
-            <Button icon={Sparkles} loading={loading} onClick={() => void generate()}>
-              {T.radar.generate}
-            </Button>
-            <Button variant="ghost" icon={Plus} onClick={() => createCell(trend)}>
-              {T.radar.sendToDrafts}
-            </Button>
+            {/* UX gating: generating ideas vs. creating a draft cell */}
+            {can("trends.generate") && (
+              <Button icon={Sparkles} loading={loading} onClick={() => void generate()}>
+                {T.radar.generate}
+              </Button>
+            )}
+            {can("drafts.create") && (
+              <Button variant="ghost" icon={Plus} onClick={() => createCell(trend)}>
+                {T.radar.sendToDrafts}
+              </Button>
+            )}
           </div>
 
           <div className={styles.results}>
