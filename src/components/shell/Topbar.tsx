@@ -1,13 +1,15 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ChevronRight, Menu, Newspaper, Play } from "lucide-react";
+import { ChevronRight, LogOut, Menu, Newspaper, Play } from "lucide-react";
 import { SITES } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { useAuth } from "@/lib/store/useAuth";
 import { USERS, roleLabel } from "@/lib/config/team";
 import { docFor } from "@/lib/config/pageDocs";
 import { T } from "@/lib/config/strings";
 import Button from "@/components/ui/Button";
+import AuthSwitcher from "@/components/auth/AuthSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import styles from "./Topbar.module.css";
 
@@ -22,6 +24,7 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
   const pullInbox = useNewsroom((s) => s.pullInbox);
   const currentUser = useNewsroom((s) => s.currentUser);
   const setCurrentUser = useNewsroom((s) => s.setCurrentUser);
+  const logout = useAuth().logout;
 
   const doc = docFor(pathname);
   const showActions = ACTION_ROUTES.has(pathname);
@@ -77,6 +80,18 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
         </select>
         <ChevronRight size={14} color="var(--dim)" className={styles.chevron} />
       </div>
+
+      {/* RBAC identity switcher (dev) — flips access role/permissions live.
+          Separate from the team switcher above (content-workflow assignment). */}
+      <AuthSwitcher />
+      <button
+        className={styles.logout}
+        onClick={logout}
+        aria-label={T.auth.logout}
+        title={T.auth.logout}
+      >
+        <LogOut size={17} />
+      </button>
 
       {showActions && (
         <div className={styles.actions}>

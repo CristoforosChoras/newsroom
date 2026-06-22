@@ -1,0 +1,149 @@
+.card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--accent);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+.brandSub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+}
+
+.title {
+  margin: 6px 0 0;
+  font-size: 22px;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.submit {
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.error {
+  color: var(--red);
+  font-size: 12.5px;
+}
+
+.demo {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.demoTitle {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.demoHint {
+  font-size: 11.5px;
+  color: var(--faint);
+  margin: 3px 0 9px;
+}
+
+.demoList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.demoUser {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name role" "email role";
+  align-items: center;
+  gap: 0 10px;
+  text-align: left;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 8px 11px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.demoUser:hover {
+  border-color: var(--accent);
+}
+
+.demoName {
+  grid-area: name;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.demoEmail {
+  grid-area: email;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.demoRole {
+  grid-area: role;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--orange-soft);
+  border: 1px solid var(--orange-line);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.caveat {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: var(--amber);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.caveat svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}

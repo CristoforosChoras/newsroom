@@ -1,0 +1,47 @@
+.splash {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.center {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  padding: 24px;
+}
+
+.noAccess {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  max-width: 380px;
+  padding: 32px;
+}
+
+.naTitle {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.naBody {
+  margin: 0;
+  color: var(--dim);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.naLink {
+  margin-top: 6px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.naLink:hover {
+  text-decoration: underline;
+}

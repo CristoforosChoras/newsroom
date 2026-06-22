@@ -1,5 +1,8 @@
 import type {
   Cell,
+  CompetitionDraft,
+  CompetitionFinding,
+  CompetitionRun,
   Finality,
   Gap,
   Idea,
@@ -410,6 +413,77 @@ export async function generateTrendIdeas(
       research: TrendResearch | null;
     };
     return { drafts: data.drafts ?? [], research: data.research ?? null };
+  } catch {
+    return null;
+  }
+}
+
+/* ──────────────────── Competition Analysis (competitor scout) ──────────────────── */
+
+export interface ScoutOpts {
+  urls: string[];
+  socials?: string[];
+  windowHours?: number;
+  profileIds?: string[];
+}
+
+// Start an async competition analysis. Returns the runId (poll it) or null.
+export async function startCompetition(opts: ScoutOpts): Promise<string | null> {
+  try {
+    const res = await fetch("/api/agents/competition", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(opts),
+    });
+    if (!res.ok) throw new Error(`competition ${res.status}`);
+    const data = (await res.json()) as { runId?: string };
+    return data.runId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Poll a run → its status + findings (null on failure).
+export async function getCompetitionRun(
+  runId: string,
+): Promise<{ run: CompetitionRun; findings: CompetitionFinding[] } | null> {
+  try {
+    const res = await fetch(`/api/agents/competition?runId=${encodeURIComponent(runId)}`);
+    if (!res.ok) throw new Error(`competition ${res.status}`);
+    const data = (await res.json()) as { run: CompetitionRun; findings: CompetitionFinding[] };
+    return data.run ? { run: data.run, findings: data.findings ?? [] } : null;
+  } catch {
+    return null;
+  }
+}
+
+// List recent runs (revisitable history) — null on failure.
+export async function listCompetitionRuns(): Promise<CompetitionRun[] | null> {
+  try {
+    const res = await fetch("/api/agents/competition");
+    if (!res.ok) throw new Error(`competition ${res.status}`);
+    const data = (await res.json()) as { runs: CompetitionRun[] };
+    return Array.isArray(data.runs) ? data.runs : [];
+  } catch {
+    return null;
+  }
+}
+
+// Generate a per-brand suggested angle for a finding — null on failure.
+export async function generateCompetitionAngle(
+  runId: string,
+  findingId: string,
+  profileIds: string[],
+): Promise<CompetitionDraft[] | null> {
+  try {
+    const res = await fetch("/api/agents/competition/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ runId, findingId, profileIds }),
+    });
+    if (!res.ok) throw new Error(`competition generate ${res.status}`);
+    const data = (await res.json()) as { drafts: CompetitionDraft[] };
+    return data.drafts ?? [];
   } catch {
     return null;
   }

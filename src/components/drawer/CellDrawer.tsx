@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { COLUMNS, SITES, columnsFor, stageLabel } from "@/lib/config/sites";
 import { useNewsroom } from "@/lib/store/useNewsroom";
+import { useCan } from "@/lib/store/useAuth";
 import {
   userById,
   writersForSite,
@@ -57,6 +58,7 @@ export default function CellDrawer() {
   const composeSocial = useNewsroom((s) => s.composeSocial);
   const submitSocialForApproval = useNewsroom((s) => s.submitSocialForApproval);
   const approveSocialSchedule = useNewsroom((s) => s.approveSocialSchedule);
+  const can = useCan();
   const returnSocial = useNewsroom((s) => s.returnSocial);
   const postSocial = useNewsroom((s) => s.postSocial);
   const flash = useNewsroom((s) => s.flash);
@@ -482,7 +484,7 @@ export default function CellDrawer() {
                   ))}
                 </div>
               )}
-              {isAssignee ? (
+              {isAssignee && can("drafts.create") ? (
                 <>
                   <Button
                     icon={FileText}
@@ -501,7 +503,7 @@ export default function CellDrawer() {
                     </div>
                   )}
                 </>
-              ) : (
+              ) : isAssignee ? null : (
                 <div className={styles.hintAmber}>
                   Μόνο ο/η {userById(c.assignee)?.name ?? "συντάκτης"} επεξεργάζεται & υποβάλλει.
                 </div>
@@ -527,16 +529,18 @@ export default function CellDrawer() {
                   </div>
                 ))}
               </div>
-              {isReviewer ? (
+              {isReviewer && can("drafts.approve") ? (
                 <>
-                  <Button
-                    icon={CheckCircle2}
-                    disabled={blocked}
-                    loading={c._publishing}
-                    onClick={() => approveAndPublish(c.id)}
-                  >
-                    {blocked ? "Φραγή: κρίσιμο SEO" : "Έγκριση & Δημοσίευση"}
-                  </Button>
+                  {can("drafts.publish") && (
+                    <Button
+                      icon={CheckCircle2}
+                      disabled={blocked}
+                      loading={c._publishing}
+                      onClick={() => approveAndPublish(c.id)}
+                    >
+                      {blocked ? "Φραγή: κρίσιμο SEO" : "Έγκριση & Δημοσίευση"}
+                    </Button>
+                  )}
                   <textarea
                     className={styles.noteInput}
                     placeholder="Σχόλιο για επιστροφή στον συντάκτη…"
@@ -554,7 +558,7 @@ export default function CellDrawer() {
                     Επιστροφή με σχόλια
                   </Button>
                 </>
-              ) : (
+              ) : isReviewer ? null : (
                 <div className={styles.hintAmber}>
                   Μόνο ο/η επιμελητής/τρια ({userById(c.reviewer)?.name ?? "—"})
                   εγκρίνει ή επιστρέφει.

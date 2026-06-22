@@ -80,10 +80,11 @@ export const T = {
       dashboard: "Dashboard",
       newsroom: "Newsroom",
       trends: "Trend Radar",
-      gaps: "Content Gaps",
+      gaps: "Competition",
       reports: "Reports",
       agents: "Agents",
       glossary: "Γλωσσάρι",
+      users: "Χρήστες",
     },
     pageDocsToggle: "Πώς δουλεύει & γιατί",
     howHeading: "Πώς δουλεύει & γιατί",
@@ -401,6 +402,42 @@ export const T = {
     },
   },
 
+  competition: {
+    title: "Competition Analysis",
+    intro:
+      "Βάλε URLs ανταγωνιστών και τρέξε ανάλυση: τι χάσαμε (Missed) και πού μας ξεπέρασαν (Behind), με προτεινόμενη γωνία.",
+    urlsLabel: "URLs ανταγωνιστών (ένα ανά γραμμή)",
+    urlsPlaceholder: "https://www.gazzetta.gr/\nhttps://www.sport24.gr/",
+    socialsLabel: "Social accounts (προαιρετικά)",
+    socialsPlaceholder: "@competitor (προαιρετικά)",
+    windowLabel: "Παράθυρο",
+    brandsLabel: "Brands προς σύγκριση",
+    analyze: "Ανάλυση",
+    pickUrls: "Πρόσθεσε τουλάχιστον ένα URL",
+    pickBrands: "Διάλεξε τουλάχιστον ένα brand",
+    failed: "Competition: μη διαθέσιμο (Social Radar offline)",
+    statusPending: "σε αναμονή",
+    statusRunning: "σε εξέλιξη",
+    statusDone: "ολοκληρώθηκε",
+    statusError: "σφάλμα",
+    missed: "MISSED",
+    behind: "BEHIND",
+    whyMatters: "Γιατί έχει σημασία",
+    competitorsLabel: "Ανταγωνιστές",
+    summaryTitle: "Σύνοψη ανταγωνιστών",
+    cadence: (n: number) => `${n}/ημέρα`,
+    articlesN: (n: number) => `${n} άρθρα`,
+    sourcesFailed: "Πηγές που απέτυχαν / μπλοκαρίστηκαν",
+    socialUnavailable: "Social scouting: μη διαθέσιμο (χωρίς provider key)",
+    pastRuns: "Προηγούμενες αναλύσεις",
+    noFindings: "Καμία διαφορά εντοπίστηκε (ή κενό baseline).",
+    empty: "Καμία ανάλυση ακόμη — βάλε URLs και πάτησε «Ανάλυση».",
+    suggestAngle: "Προτεινόμενη γωνία",
+    generate: "Δημιουργία ιδεών",
+    competitorCount: (n: number) => `${n} ανταγωνιστές`,
+    windows: { "24": "24ω", "48": "48ω", "72": "72ω", "168": "7 ημέρες" } as Record<string, string>,
+  },
+
   // shared by the Trend Radar & Content Gaps "deactivated" panels
   deactivatedPanel: {
     prefix: "Ενεργοποίησέ το από τη σελίδα",
@@ -457,5 +494,42 @@ export const T = {
   routing: {
     noClearVertical:
       "Δεν εντοπίστηκε καθαρό vertical — προτείνεται χειροκίνητη επιβεβαίωση.",
+  },
+
+  // Auth + RBAC (mock identity, real roles/permissions). UX-only — see README.
+  auth: {
+    brand: "MATRIX",
+    brandSub: "NEWSROOM CORE",
+    loginTitle: "Σύνδεση",
+    loginSubtitle: "Διάλεξε έναν demo χρήστη ή γράψε το email του.",
+    emailLabel: "Email",
+    emailPlaceholder: "name@matrix.gr",
+    passwordLabel: "Κωδικός",
+    passwordPlaceholder: "οποιοσδήποτε (mock)",
+    signIn: "Είσοδος",
+    signInFailed: "Άγνωστος χρήστης — διάλεξε από τη λίστα.",
+    demoUsersTitle: "Demo χρήστες",
+    demoHint: "Κλικ σε χρήστη για συμπλήρωση · δεν ελέγχεται κωδικός.",
+    mockCaveat:
+      "⚠ Mock σύνδεση — χωρίς πραγματικό έλεγχο. Η ασφάλεια επιβάλλεται server-side όταν μπει το πραγματικό auth.",
+    logout: "Αποσύνδεση",
+    loginAs: "Σύνδεση ως (dev)",
+    // no-access state
+    noAccessTitle: "Χωρίς πρόσβαση",
+    noAccessBody: "Ο ρόλος σου δεν έχει δικαίωμα σε αυτή τη σελίδα.",
+    backToDashboard: "Επιστροφή στο Dashboard",
+    loading: "Έλεγχος πρόσβασης…",
+    // user management
+    usersTitle: "Διαχείριση χρηστών",
+    usersIntro:
+      "Δες τους χρήστες, άλλαξε ρόλους και ρύθμισε τι βλέπει κάθε ρόλος. Λειτουργεί σε mock δεδομένα.",
+    colUser: "Χρήστης",
+    colEmail: "Email",
+    colRole: "Ρόλος",
+    matrixTitle: "Δικαιώματα ανά ρόλο",
+    matrixIntro:
+      "Τσέκαρε τι μπορεί να κάνει κάθε ρόλος. Οι αλλαγές εφαρμόζονται άμεσα σε μενού και κουμπιά.",
+    resetMatrix: "Επαναφορά προεπιλογών",
+    matrixOverridden: "Τροποποιημένος πίνακας (όχι προεπιλογές)",
   },
 } as const;

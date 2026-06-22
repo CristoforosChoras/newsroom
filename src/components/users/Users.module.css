@@ -1,0 +1,224 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  max-width: 980px;
+}
+
+.intro {
+  margin: 0;
+  color: var(--dim);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* ── users list ── */
+.table {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.6fr 0.9fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-top: 1px solid var(--line);
+}
+
+.head {
+  border-top: none;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.colEmail {
+  color: var(--dim);
+  font-size: 12.5px;
+}
+
+.colRole {
+  justify-self: start;
+}
+
+.roleTag {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--orange-soft);
+  border: 1px solid var(--orange-line);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* ── matrix ── */
+.matrixHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.matrixIntro {
+  margin: 8px 0 12px;
+  color: var(--dim);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.overridden {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.matrixScroll {
+  overflow-x: auto;
+}
+
+.matrix {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 540px;
+}
+
+.matrix th,
+.matrix td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.roleHead {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.permCol {
+  text-align: left;
+  width: 40%;
+  /* keep the permission name visible while the role columns scroll on mobile */
+  position: sticky;
+  left: 0;
+  background: var(--panel);
+}
+
+.permName {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.cell {
+  text-align: center;
+}
+
+.check {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.check:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* ── tablet ── */
+@media (max-width: 1023px) {
+  .page {
+    padding: 16px;
+  }
+}
+
+/* ── mobile: stack the user rows, tighten the matrix ── */
+@media (max-width: 679px) {
+  .page {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  /* column headers stop making sense once rows stack */
+  .head {
+    display: none;
+  }
+
+  /* name + email on the left, role control on the right */
+  .row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "user role"
+      "email role";
+    align-items: center;
+    gap: 2px 10px;
+    padding: 12px 2px;
+  }
+
+  .user {
+    grid-area: user;
+    font-size: 13px;
+  }
+
+  .colEmail {
+    grid-area: email;
+    font-size: 12px;
+    word-break: break-all;
+  }
+
+  .colRole {
+    grid-area: role;
+    justify-self: end;
+    align-self: center;
+  }
+
+  /* let the role <select> shrink to fit the narrow column */
+  .colRole select {
+    max-width: 38vw;
+  }
+
+  /* denser permission matrix; the perm column stays pinned (sticky above) */
+  .matrix {
+    min-width: 460px;
+  }
+
+  .matrix th,
+  .matrix td {
+    padding: 7px 8px;
+  }
+
+  .permName {
+    font-size: 10.5px;
+  }
+
+  .roleHead {
+    font-size: 11px;
+  }
+}
